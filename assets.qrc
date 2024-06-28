@@ -1,0 +1,6 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file alias="probeModel">assets/UsProbe_Telemed_L12.stl</file>
+    <!-- Add more resources here -->
+</qresource>
+</RCC>
