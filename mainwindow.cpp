@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Assuming 'scatter' is a pointer to your Q3DScatter instance
     Q3DCamera *camera = scatter->scene()->activeCamera();
     float currentZoomLevel = camera->zoomLevel();
-    float newZoomLevel = currentZoomLevel + 100.0f;
+    float newZoomLevel = currentZoomLevel + 110.0f;
     camera->setZoomLevel(newZoomLevel);
 
     // Put the scatter object to a container and add it to the UI
@@ -73,9 +73,12 @@ MainWindow::~MainWindow()
 
 
 /* *****************************************************************************************
+ * *****************************************************************************************
+ *
  * Everything that is related to B-mode image streaming
+ *
+ * *****************************************************************************************
  * ***************************************************************************************** */
-
 
 void MainWindow::displayImage(const cv::Mat &image) {
     // Convert the cv::Mat to a QImage
@@ -106,8 +109,15 @@ void MainWindow::on_pushButton_startCamera_clicked()
 */
 
 
+
+
+
 /* *****************************************************************************************
+ * *****************************************************************************************
+ *
  * Everything that is related to Qualisys Rigid-body streaming
+ *
+ * *****************************************************************************************
  * ***************************************************************************************** */
 
 /*
@@ -190,7 +200,6 @@ void MainWindow::updateQualisysText(const QualisysTransformationManager &tmanage
 /* *****************************************************************************************
  * Somehting new
  * ***************************************************************************************** */
-
 
 void MainWindow::on_pushButton_bmode2d3d_clicked()
 {
@@ -296,8 +305,15 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
 }
 
 
+
+
+
 /* *****************************************************************************************
+ * *****************************************************************************************
+ *
  * Everything that is related to Volume Reconstruction module
+ *
+ * *****************************************************************************************
  * ***************************************************************************************** */
 
 void MainWindow::on_pushButton_mhaPath_clicked()
@@ -534,8 +550,14 @@ void MainWindow::volumeReconstructorCmdFinished()
 
 
 
+
+
 /* *****************************************************************************************
+ * *****************************************************************************************
+ *
  * Everything that is related to A-mode signal streaming
+ *
+ * *****************************************************************************************
  * ***************************************************************************************** */
 
 
@@ -697,8 +719,14 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
 
 
 
+
+
 /* *****************************************************************************************
+ * *****************************************************************************************
+ *
  * Everything that is related to A-mode configuration
+ *
+ * *****************************************************************************************
  * ***************************************************************************************** */
 
 void MainWindow::on_pushButton_amodeConfig_clicked()
@@ -784,24 +812,52 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
             ui->gridLayout_amodeSignals->addWidget(current_plot, bit1, bit2, 1,1);
         }
     }
+
+    // I want to make this push button when changed, also change the 3d amode visualization
+    if(myVolumeAmodeController == nullptr) return;
+
+    // I already implemented a function inside myVolumeAmodeController to set a new amodegroupdata
+    // however, when i set it from here, it crashed, i don't know why. i am tired of this shit.
+    // myVolumeAmodeController->setAmodeGroupData(amode_group)
+
+    // So, what i do? just delete the object...
+    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+    delete myVolumeAmodeController;
+    myVolumeAmodeController = nullptr;
+
+    // ...then reinitialize again. It's working. I don't care it is ugly.
+    myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
+    connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+
 }
 
 
 
+
 /* *****************************************************************************************
- * Everything that is related to testing
+ * *****************************************************************************************
+ *
+ * Everything that is related to A-mode 3D visualization
+ *
+ * *****************************************************************************************
  * ***************************************************************************************** */
 
 void MainWindow::on_checkBox_volumeShow3DSignal_stateChanged(int arg1)
 {
-    // if the check now true
+    // if the checkbox is now true, let's initialize the amode 3d visualization
     if(arg1)
     {
-        // check wheter A-mode config already there
+        // check wheter A-mode config already initialized
         if(myAmodeConfig==nullptr)
         {
-
             QMessageBox::warning(this, "Can't show signal", "To show 3D signal, please load the amode configuration file first.");
+            ui->checkBox_volumeShow3DSignal->setCheckState(Qt::Unchecked);
+            return;
+        }
+
+        if(myQualisysConnection==nullptr)
+        {
+            QMessageBox::warning(this, "Can't show signal", "To show 3D signal, please connect to motion capture system.");
             ui->checkBox_volumeShow3DSignal->setCheckState(Qt::Unchecked);
             return;
         }
@@ -818,6 +874,8 @@ void MainWindow::on_checkBox_volumeShow3DSignal_stateChanged(int arg1)
         myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
         connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
     }
+
+    // if the checkbox is now false, let's disconnect the signal to the class and delete the class
     else
     {
         disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
@@ -832,8 +890,10 @@ void MainWindow::on_checkBox_volumeShow3DSignal_stateChanged(int arg1)
 
 void MainWindow::on_comboBox_volume3DSignalMode_currentIndexChanged(int index)
 {
+    // check wheter A-mode config already initialized
     if (myVolumeAmodeController==nullptr) return;
 
+    // if yes, now you can change the 3d signal display mode
     myVolumeAmodeController->setSignalDisplayMode(index);
 }
 

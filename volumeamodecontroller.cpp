@@ -55,9 +55,6 @@ VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatte
     amode3dsignal_.row(2).setZero(); // z-coordinate
     amode3dsignal_.row(3).setOnes(); // 1 (homogeneous)
 
-    amode3dsignal_b_ = amode3dsignal_;
-    amode3dsignal_b_.row(0) = -1 * amode3dsignal_.row(0);
-
     // initialize transformations
     currentT_holder_camera = Eigen::Isometry3d::Identity();
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
@@ -69,7 +66,6 @@ VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatte
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
         all_amode3dsignal_.push_back(amode3dsignal_);
-        all_amode3dsignal_b_.push_back(amode3dsignal_b_);
     }
 
     // initialize the 3ditem and its setting
@@ -166,6 +162,11 @@ void VolumeAmodeController::setSignalDisplayMode(int mode)
     }
 }
 
+// void VolumeAmodeController::setAmodeGroupData(std::vector<AmodeConfig::Data> amodegroupdata)
+// {
+//     amodegroupdata_ = amodegroupdata;
+// }
+
 void VolumeAmodeController::newObject(std::string path, std::string name)
 {
     std::string objpath = path;
@@ -189,13 +190,17 @@ void VolumeAmodeController::newObject(std::string path, std::string name)
 
 void VolumeAmodeController::updateTransformations(Eigen::Isometry3d currentT_holder_camera)
 {
+    // get the current transformation matrix from qualisys
     Eigen::Matrix3d tmp_R = currentT_holder_camera.rotation();
     Eigen::Vector3d tmp_t = currentT_holder_camera.translation();
+
+    // initialize transformation matrix for Qt. In Qt, the representation of rotation matrix
+    // is different. You need to transpose it so that it will be the same as representation in Eigen.
     Eigen::Isometry3d currentT_holder_camera_Qt = Eigen::Isometry3d::Identity();
     currentT_holder_camera_Qt.linear()          = tmp_R.transpose();
     currentT_holder_camera_Qt.translation()     = tmp_t;
 
-    // update the T_ustip_holder
+    // update the T_ustip_holder. Loop for each ustip inside the holder
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
         // get the local_R data from amodeconfig
@@ -216,16 +221,14 @@ void VolumeAmodeController::updateTransformations(Eigen::Isometry3d currentT_hol
         currentT_ustip_holder.linear() = local_R_matrix;
         currentT_ustip_holder.translation() = local_t;
 
+        // now, do the same thing also but for Qt matrix representation
         Eigen::Isometry3d currentT_ustip_holder_Qt = Eigen::Isometry3d::Identity();
         currentT_ustip_holder_Qt.linear() = local_R_matrix.transpose();
         currentT_ustip_holder_Qt.translation() = local_t;
 
+        // store everything to our vectors. Transformation is now updated
         currentT_ustip_camera.at(i) = currentT_holder_camera * currentT_ustip_holder;
         currentT_ustip_camera_Qt.at(i) = currentT_holder_camera_Qt * currentT_ustip_holder_Qt;
-
-        // // transform 3d signal
-        // all_amode3dsignal_.at(i) = currentT_ustip_camera_Qt.at(i).matrix() * amode3dsignal_;
-        // all_amode3dsignal_b_.at(i) = currentT_ustip_camera_Qt.at(i).matrix() * amode3dsignal_b_;
     }
 }
 
@@ -262,7 +265,8 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
     int offset_y = -125;
     int offset_z = -115;
 
-    // delete all the series inside the scatter
+    // delete all the series inside the scatter. So everytime there is a new rigidbody data coming
+    // from qualisys, we should remove all the scatter data in our scatter series
     for (QScatter3DSeries *series : scatter_->seriesList()) {
         if (series->name() == "amode3dsignal" || series->name() == "amode3dorigin") {
             scatter_->removeSeries(series);
@@ -270,18 +274,19 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
     }
 
     // Create a QScatterDataArray to store the origins of the signals.
-    // I wrote this outside the loop, because i want the scatter for origin to be one scatter object,
+    // I wrote this outside the loop (below), because i want the scatter for origin point to be one scatter object,
     // so that i could set the configuration of the visualization as a group
     QScatterDataArray *originArray = new QScatterDataArray;
     originArray->resize(amodegroupdata_.size());
 
     // For the case of scatter for the signal data themshelves, i will make them separately,
-    // each signal has its own scatter object. i want to make differentiation in color for each signal.
+    // each signal has its own scatter object, so that i could make differentiation in color for each signal.
     // So i will need a loop for how much signal i have
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
         // Get the size of the data (that is the samples in the signal)
         int arraysize = amode3dsignal_.cols();
+
         // Since we provided several display mode for visualizing amode 3d signal, we need to provide
         // a variable to place all of those display modes
         Eigen::Matrix<double, 4, Eigen::Dynamic> current_amode3dsignal_display(4, arraysize * n_signaldisplay);
@@ -305,10 +310,6 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
             (*dataArray)[j].setPosition( QVector3D(current_amode3dsignal_display(0, j) +offset_x,
                                                    current_amode3dsignal_display(1, j) +offset_y,
                                                    current_amode3dsignal_display(2, j) +offset_z));
-
-            // (*dataArray)[arraysize+j].setPosition( QVector3D(all_amode3dsignal_b_.at(i)(0, j) +offset_x,
-            //                                                  all_amode3dsignal_b_.at(i)(1, j) +offset_y,
-            //                                                  all_amode3dsignal_b_.at(i)(2, j) +offset_z));
         }
 
         // Using this loop, i will add data to my originArray, that is the first data in the signal.
@@ -324,6 +325,7 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
         series->setMesh(QAbstract3DSeries::MeshPoint);
         series->dataProxy()->resetArray(dataArray);
 
+        // add the current amode data (series) to our scatter object
         scatter_->addSeries(series);
     }
 
@@ -335,7 +337,7 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
     series->setBaseColor(Qt::red);
     series->dataProxy()->resetArray(originArray);
 
-    // add everything to the series
+    // add the current origin point data (series) to our scatter object
     scatter_->addSeries(series);
 }
 

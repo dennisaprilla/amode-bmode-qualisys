@@ -19,6 +19,7 @@ public:
     ~VolumeAmodeController();
 
     void setSignalDisplayMode(int mode);
+    // void setAmodeGroupData(std::vector<AmodeConfig::Data> amodegroupdata);
     void newObject(std::string path, std::string name);
     void updateTransformations(Eigen::Isometry3d T);
 
@@ -40,20 +41,19 @@ private:
     // all variables related to amode signal
     std::vector<AmodeConfig::Data> amodegroupdata_;
     std::vector<uint16_t> amodesignal_;
-
     Eigen::Matrix<double, 4, 3500> amode3dsignal_;
     std::vector<Eigen::Matrix<double, 4, 3500>> all_amode3dsignal_;
-    Eigen::Matrix<double, 4, 3500> amode3dsignal_b_;
-    std::vector<Eigen::Matrix<double, 4, 3500>> all_amode3dsignal_b_;
 
     // all variables related to transformations
     Eigen::Isometry3d currentT_holder_camera;
     std::vector<Eigen::Isometry3d> currentT_ustip_camera;
     std::vector<Eigen::Isometry3d> currentT_ustip_camera_Qt;
 
+    // variable that controls "soft synchronization" data from qualisys and A-mode machine.
     bool amodesignalReady = false;
     bool rigidbodyReady = false;
 
+    // variable that handle the display of 3d signal
     int n_signaldisplay = 1;
     std::vector<Eigen::Matrix4d> rotation_signaldisplay;
 

@@ -65,28 +65,25 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    AmodeConnection *myAmodeConnection;
-    AmodeConfig *myAmodeConfig = nullptr;
-    BmodeConnection *myBmodeConnection;
-    QualisysConnection *myQualisysConnection;
-    Bmode3DVisualizer *myBmode3Dvisualizer;
-    MHAWriter *myMHAWriter;
-    MHAReader *myMHAReader = nullptr;
-    Volume3DController *myVolume3DController = nullptr;
-    VolumeAmodeController *myVolumeAmodeController = nullptr;
+    AmodeConnection *myAmodeConnection              = nullptr;
+    AmodeConfig *myAmodeConfig                      = nullptr;
+    BmodeConnection *myBmodeConnection              = nullptr;
+    QualisysConnection *myQualisysConnection        = nullptr;
+    Bmode3DVisualizer *myBmode3Dvisualizer          = nullptr;
+    MHAWriter *myMHAWriter                          = nullptr;
+    MHAReader *myMHAReader                          = nullptr;
+    Volume3DController *myVolume3DController        = nullptr;
+    VolumeAmodeController *myVolumeAmodeController  = nullptr;
 
-    std::vector<QCustomPlot*> amodePlots;
-    Q3DScatter *scatter;
+    // for amode 2d plots
+    std::vector<QCustomPlot*> amodePlots;   //!< For handling amode 2d plots visualization
+    Q3DScatter *scatter;                    //!< For handling amode 3d plots and 3d volume visualization
+    QProcess* process;                      //!< For invoking command prompt
 
-    QProcess* process;
-
-    bool isMHArecord = true;
-    int currentCameraIndex;
-
-    bool isBmode2d3dStream = true;
-    bool isBmode2d3dFirstStream = true;
-
-    bool isAmodeStream = true;
+    bool isMHArecord            = true;     //!< Flag to inform whether we are ready for recording MHA or not
+    bool isBmode2d3dStream      = true;     //!< Flag to inform whether we are ready to stream B-mode 2d image and 3d visualize it or not
+    bool isBmode2d3dFirstStream = true;     //!< Flag to inform whether it is the first time to stream B-mode 2d image and qualisys or not
+    bool isAmodeStream          = true;     //!< Flag to inform whether we are ready to stream A-mode data or not
 
 };
 #endif // MAINWINDOW_H
