@@ -40,7 +40,7 @@ private:
 
     // all variables related to amode signal
     std::vector<AmodeConfig::Data> amodegroupdata_;
-    std::vector<uint16_t> amodesignal_;
+    QVector<int16_t> amodesignal_;
     Eigen::Matrix<double, 4, 3500> amode3dsignal_;
     std::vector<Eigen::Matrix<double, 4, 3500>> all_amode3dsignal_;
 

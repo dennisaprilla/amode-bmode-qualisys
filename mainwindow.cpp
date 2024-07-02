@@ -821,13 +821,15 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
     // myVolumeAmodeController->setAmodeGroupData(amode_group)
 
     // So, what i do? just delete the object...
-    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);    
+    disconnect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
     delete myVolumeAmodeController;
     myVolumeAmodeController = nullptr;
 
     // ...then reinitialize again. It's working. I don't care it is ugly.
     myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
     connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+    connect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
 
 }
 
@@ -873,12 +875,14 @@ void MainWindow::on_checkBox_volumeShow3DSignal_stateChanged(int arg1)
         // because amode_group here declared locally, so the reference will be gone outside of this scope.
         myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
         connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+        connect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
     }
 
     // if the checkbox is now false, let's disconnect the signal to the class and delete the class
     else
     {
         disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+        disconnect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
         delete myVolumeAmodeController;
         myVolumeAmodeController = nullptr;
 

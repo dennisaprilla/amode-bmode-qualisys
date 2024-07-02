@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <cmath>
 #include "volumeamodecontroller.h"
+#include "amodedatamanipulator.h"
 
 bool readCsvIntoEigenVectorXd(const QString &filePath, Eigen::VectorXd &vector1, Eigen::VectorXd &vector2) {
     QFile file(filePath);
@@ -235,28 +236,41 @@ void VolumeAmodeController::updateTransformations(Eigen::Isometry3d currentT_hol
 
 void VolumeAmodeController::onAmodeSignalReceived(const std::vector<uint16_t> &usdata_uint16_)
 {
-    /*
-    // get the data here amode signal here
+    // get the amode data
+    QVector<int16_t> tmp(usdata_uint16_.begin(), usdata_uint16_.end());
+    amodesignal_ = tmp;
+
+    // set the flag to be true...
     amodesignalReady = true;
+    // ...and only continue to visualize data if rigidbody data already arrive
     if (rigidbodyReady) {
         visualize3DSignal();
     }
-    */
 }
 
 void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationManager &tmanager)
 {
-    /*
-    temporary code, i should get the transformation based on the group amodegroupdata_->at(0).groupname
+    // temporary code, i should get the transformation based on the group amodegroupdata_->at(0).groupname
     currentT_holder_camera = tmanager.getTransformationById("TB-M");
+
+    // set the flag to be true...
     rigidbodyReady = true;
+    // ...and only continue to visualize data if the amode signal data already arrive
     if (amodesignalReady) {
         visualize3DSignal();
     }
-    */
 
-    // get the transformation
-    currentT_holder_camera = tmanager.getTransformationById("TB-M");
+}
+
+void VolumeAmodeController::visualize3DSignal()
+{
+    // if this function is executed, it means both of rigid body data and amode data already arrived.
+    // first, reset the flag back to false
+    amodesignalReady = false;
+    rigidbodyReady = false;
+
+    // Then, starting from here, let's do visualization...
+
     // update all necessary transformations
     updateTransformations(currentT_holder_camera);
 
@@ -284,6 +298,14 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
     // So i will need a loop for how much signal i have
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
+        // select the row from the whole amode data
+        QVector<int16_t> amodesignal_rowsel = AmodeDataManipulator::getRow(amodesignal_, amodegroupdata_.at(i).number-1, 3500);
+        // convert to Eigen::VectorXd
+        Eigen::VectorXd amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(
+                                                                    amodesignal_rowsel.constData(), amodesignal_rowsel.size()).cast<double>();
+        // store it to our amode3dsignal_
+        amode3dsignal_.row(0) = amodesignal_rowsel_eigenVector * 0.001; // x-coordinate
+
         // Get the size of the data (that is the samples in the signal)
         int arraysize = amode3dsignal_.cols();
 
@@ -308,15 +330,15 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
         for (int j = 0; j < arraysize * n_signaldisplay; ++j) {
 
             (*dataArray)[j].setPosition( QVector3D(current_amode3dsignal_display(0, j) +offset_x,
-                                                   current_amode3dsignal_display(1, j) +offset_y,
-                                                   current_amode3dsignal_display(2, j) +offset_z));
+                                                  current_amode3dsignal_display(1, j) +offset_y,
+                                                  current_amode3dsignal_display(2, j) +offset_z));
         }
 
         // Using this loop, i will add data to my originArray, that is the first data in the signal.
         // To be honest, it is not exactly the origin of the signal, but hey, who the fuck can see 0.01 mm differences in the visualization?
         (*originArray)[i].setPosition( QVector3D(current_amode3dsignal_display(0, 0) +offset_x,
-                                                 current_amode3dsignal_display(1, 0) +offset_y,
-                                                 current_amode3dsignal_display(2, 0) +offset_z));
+                                                current_amode3dsignal_display(1, 0) +offset_y,
+                                                current_amode3dsignal_display(2, 0) +offset_z));
 
         // Create new series where the QScatterDataArray object will be added
         QScatter3DSeries *series = new QScatter3DSeries();
@@ -339,16 +361,4 @@ void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationMana
 
     // add the current origin point data (series) to our scatter object
     scatter_->addSeries(series);
-}
-
-void VolumeAmodeController::visualize3DSignal()
-{
-    // // Reset flags
-    // amodesignalReady = false;
-    // rigidbodyReady = false;
-
-    // transform the object
-    // transformObject(currentT_holder_camera);
-
-    // do visualization here
 }
