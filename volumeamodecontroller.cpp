@@ -303,6 +303,8 @@ void VolumeAmodeController::visualize3DSignal()
         // convert to Eigen::VectorXd
         Eigen::VectorXd amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(
                                                                     amodesignal_rowsel.constData(), amodesignal_rowsel.size()).cast<double>();
+        // remove the near field disturbance
+        amodesignal_rowsel_eigenVector.head(200).setZero();
         // store it to our amode3dsignal_
         amode3dsignal_.row(0) = amodesignal_rowsel_eigenVector * 0.001; // x-coordinate
 

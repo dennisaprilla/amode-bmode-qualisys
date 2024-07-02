@@ -210,7 +210,7 @@ void AmodeConnection::readData() {
         // The amount of bytes we should take will be:
         // (endIndex - startIndex) <== The whole frame, this includes separator & data (at the front), and arrayheader (at the rear)
         // (endIndex - startIndex) - (separator+index+headerarray) <== This is pure data
-        QByteArray frame = buffer.mid( startIndex + separatorsize_ + indexsize_, (endIndex - startIndex) - (separatorsize_ + indexsize_ + headersize_));
+        QByteArray frame = buffer.mid( (startIndex-sizeof(uint16_t)) + separatorsize_ + indexsize_, (endIndex - startIndex) - (separatorsize_ + indexsize_ + headersize_));
 
         // Let's process the frame here
         memcpy(usdata_uint16_.data(), frame.constData(), usdata_datasize_);

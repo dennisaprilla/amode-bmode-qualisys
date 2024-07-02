@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->customPlot->xAxis->setLabel("x");
     ui->customPlot->yAxis->setLabel("y");
     ui->customPlot->xAxis->setRange(0, 3500);
-    ui->customPlot->yAxis->setRange(-5000, 5000);
+    ui->customPlot->yAxis->setRange(-500, 7500);
     ui->customPlot->replot();
 
     // Initalize scatter object, can also only be done programatically
@@ -281,31 +281,43 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
             isBmode2d3dFirstStream = false;
         }
 
-        // If this is not the first time streaming, don't initialize anything anymore
+        // If this is not the first time streaming, don't initialize anything anymore,
+        // just connect all the slots for myBmode3Dvisualizer and myQualisysConnection
         else
         {
-            connect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
-            connect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
-            connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
-            connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+            slotConnect_Bmode2d3d();
         }
     }
+
+    // if the user click pause, let's disconnect all the slots to myBmode3Dvisualizer and myQualisysConnection
     else
     {
         ui->pushButton_bmode2d3d->setText("Continue");
-
-        disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
-        disconnect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
-        disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
-        disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
-
+        slotDisconnect_Bmode2d3d();
     }
 
     isBmode2d3dStream = !isBmode2d3dStream;
 }
 
+void MainWindow::slotConnect_Bmode2d3d()
+{
+    if(myQualisysConnection==nullptr || myBmodeConnection==nullptr) return;
 
+    connect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
+    connect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
+    connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
+    connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+}
 
+void MainWindow::slotDisconnect_Bmode2d3d()
+{
+    if(myQualisysConnection==nullptr || myBmodeConnection==nullptr) return;
+
+    disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
+    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
+    disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
+    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+}
 
 
 /* *****************************************************************************************
@@ -788,7 +800,7 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         current_plot->xAxis->setLabel("x");
         current_plot->yAxis->setLabel("y");
         current_plot->xAxis->setRange(0, 3500);
-        current_plot->yAxis->setRange(-5000, 5000);
+        current_plot->yAxis->setRange(-500, 7500);
         current_plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
         // store the plot to our vector, collection of plots

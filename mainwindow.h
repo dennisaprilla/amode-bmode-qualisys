@@ -63,6 +63,11 @@ private slots:
     void on_comboBox_volume3DSignalMode_currentIndexChanged(int index);
 
 private:
+    void slotConnect_Bmode2d3d();
+    void slotDisconnect_Bmode2d3d();
+    void slotConnect_Amode();
+    void slotDisconnect_Amode();
+
     Ui::MainWindow *ui;
 
     AmodeConnection *myAmodeConnection              = nullptr;
