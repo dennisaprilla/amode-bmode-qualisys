@@ -23,3 +23,37 @@ QVector<int16_t> AmodeDataManipulator::downsampleVector(const QVector<int16_t>& 
 
     return output;
 }
+
+/*
+Eigen::VectorXd AmodeDataManipulator::downsampleVector(const Eigen::VectorXd& input, int targetSize) {
+    // Calculate the step size based on the ratio of the target size to the input size
+    int step = input.size() / targetSize;
+
+    // Create a vector of indices for downsampling
+    Eigen::VectorXi indices = Eigen::VectorXi::LinSpaced(targetSize, 0, step * (targetSize - 1));
+
+    // Use Eigen's fancy indexing to create the downsampled vector
+    Eigen::VectorXd output = input(indices.array());
+
+    return output;
+}
+*/
+
+Eigen::VectorXd AmodeDataManipulator::downsampleVector(const Eigen::VectorXd& input, int targetSize) {
+    // Calculate the step size as a floating-point value
+    double step = static_cast<double>(input.size()) / targetSize;
+
+    // Create a vector to store the downsampled data
+    Eigen::VectorXd output(targetSize);
+
+    // Use a for loop to downsample the input vector
+    for (int i = 0; i < targetSize; ++i) {
+        // Calculate the index in the input vector to sample
+        int index = static_cast<int>(std::floor(i * step));
+        output(i) = input(index);
+    }
+
+    return output;
+}
+
+

@@ -1,5 +1,7 @@
 #include <filesystem>
 #include <cmath>
+#include <cstdlib>
+
 #include "volumeamodecontroller.h"
 #include "amodedatamanipulator.h"
 
@@ -46,20 +48,39 @@ bool readCsvIntoEigenVectorXd(const QString &filePath, Eigen::VectorXd &vector1,
 VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatter, std::vector<AmodeConfig::Data> amodegroupdata, int nsample)
     : QObject{parent}, scatter_(scatter), nsample_(nsample), amodegroupdata_(amodegroupdata)
 {
-    // first resize the amode3dsignal matrix according to nsample_ of amode signal
-    amode3dsignal_.resize(Eigen::NoChange, nsample_);
-
     // Calculate necessary constants
     us_period_            = 1.0 / (us_samplerate_);                                                     // [s]
     us_idx2dist_constant_ = (1000.0 * us_vsound_) / (2.0 * us_samplerate_);                             // [mm]
     us_dvector_           = Eigen::VectorXd::LinSpaced(nsample_, 1, nsample_) * us_idx2dist_constant_;  // [[mm]]
     us_tvector_           = Eigen::VectorXd::LinSpaced(nsample_, 1, nsample_) * us_period_ * 1000000;   // [[mu s]]
 
-    // initialize the amode3dsignal
-    amode3dsignal_.row(0).setZero();     // x-coordinate
-    amode3dsignal_.row(1) = us_dvector_; // y-coordinate
-    amode3dsignal_.row(2).setZero();     // z-coordinate
-    amode3dsignal_.row(3).setOnes();     // 1 (homogeneous)
+
+    if (isDownsample)
+    {
+        // downsample the us_dvector and get the length of the vector
+        Eigen::VectorXd us_dvector_downsampled = AmodeDataManipulator::downsampleVector(us_dvector_, round((double)nsample_ / downsample_ratio));
+        nsample_downsample_ = us_dvector_downsampled.size();
+
+        // first resize the amode3dsignal matrix according to nsample_downsample_ (not nsample_)
+        amode3dsignal_.resize(Eigen::NoChange, nsample_downsample_);
+        // initialize the amode3dsignal
+        amode3dsignal_.row(0).setZero();     // x-coordinate
+        amode3dsignal_.row(1) = us_dvector_downsampled; // y-coordinate
+        amode3dsignal_.row(2).setZero();     // z-coordinate
+        amode3dsignal_.row(3).setOnes();     // 1 (homogeneous)
+
+        qDebug() << "us_dvector_ target downsample: " << round((double)nsample_ / downsample_ratio);
+    }
+    else
+    {
+        // first resize the amode3dsignal matrix according to nsample_ of amode signal
+        amode3dsignal_.resize(Eigen::NoChange, nsample_);
+        // initialize the amode3dsignal
+        amode3dsignal_.row(0).setZero();     // x-coordinate
+        amode3dsignal_.row(1) = us_dvector_; // y-coordinate
+        amode3dsignal_.row(2).setZero();     // z-coordinate
+        amode3dsignal_.row(3).setOnes();     // 1 (homogeneous)
+    }
 
     // initialize transformations
     currentT_holder_camera = Eigen::Isometry3d::Identity();
@@ -306,16 +327,53 @@ void VolumeAmodeController::visualize3DSignal()
     {
         // select the row from the whole amode data
         QVector<int16_t> amodesignal_rowsel = AmodeDataManipulator::getRow(amodesignal_, amodegroupdata_.at(i).number-1, nsample_);
-        // convert to Eigen::VectorXd
-        Eigen::VectorXd amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(amodesignal_rowsel.constData(), amodesignal_rowsel.size()).cast<double>();
-        // remove the near field disturbance
-        amodesignal_rowsel_eigenVector.head(200).setZero();
+
+        // if we decided to downsample, we need to downsample the amodesignal_rowsel first
+        // before we assign to amode3dsignal_ so that the dimension will match
+        Eigen::VectorXd amodesignal_rowsel_eigenVector;
+        int idx = 200;
+        if(isDownsample)
+        {
+            // downsample
+            QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(amodesignal_rowsel, round((double)nsample_ / downsample_ratio));
+
+            // Let's check if the size of usdata_qvint16_downsmp different than amode3dsignal_.row(0), if it is different,
+            // it will be a disaster when i want to assign the value of usdata_qvint16_downsmp to amode3dsignal_.row(0)
+            //
+            // And why the hell, you ask, do we need to do this whereas we downsample the same value to both usdata_qvint16_downsmp and amode3dsignal_.row(0)?
+            // The answer is i don't fucking know. It annoys me so much.
+            // What i can say, most probably, it because the implementation of downsampleVector() for QVector<int16_t> is for speed, not for downsampling accuracy.
+            // This block of code is super ugly, but who cares. It works. That's all we need. Bye.
+            if (usdata_qvint16_downsmp.size() != amode3dsignal_.row(0).size())
+            {
+                int diff = usdata_qvint16_downsmp.size() - amode3dsignal_.row(0).size();
+                if (diff > 0)
+                    for (int j=0; j<abs(diff); j++) usdata_qvint16_downsmp.removeLast();
+                else
+                {
+                    for (int j=0; j<abs(diff); j++) usdata_qvint16_downsmp.append(usdata_qvint16_downsmp.last());
+                }
+            }
+
+            // convert to Eigen::VectorXd
+            amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(usdata_qvint16_downsmp.constData(), usdata_qvint16_downsmp.size()).cast<double>();
+            // remove the near field disturbance
+            int idx_new = round(double(idx) / downsample_ratio);
+            amodesignal_rowsel_eigenVector.head(idx_new).setZero();
+        }
+        else
+        {
+            // convert to Eigen::VectorXd
+            amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(amodesignal_rowsel.constData(), amodesignal_rowsel.size()).cast<double>();
+            // remove the near field disturbance
+            amodesignal_rowsel_eigenVector.head(idx).setZero();
+        }
+
         // store it to our amode3dsignal_
-        amode3dsignal_.row(0) = amodesignal_rowsel_eigenVector * 0.0015; // x-coordinate
+        amode3dsignal_.row(0) = amodesignal_rowsel_eigenVector * 0.001; // x-coordinate
 
         // Get the size of the data (that is the samples in the signal)
         int arraysize = amode3dsignal_.cols();
-
         // Since we provided several display mode for visualizing amode 3d signal, we need to provide
         // a variable to place all of those display modes
         Eigen::Matrix<double, 4, Eigen::Dynamic> current_amode3dsignal_display(4, arraysize * n_signaldisplay);
@@ -337,8 +395,8 @@ void VolumeAmodeController::visualize3DSignal()
         for (int j = 0; j < arraysize * n_signaldisplay; ++j) {
 
             (*dataArray)[j].setPosition( QVector3D(current_amode3dsignal_display(0, j) +offset_x,
-                                                  current_amode3dsignal_display(1, j) +offset_y,
-                                                  current_amode3dsignal_display(2, j) +offset_z));
+                                                   current_amode3dsignal_display(1, j) +offset_y,
+                                                   current_amode3dsignal_display(2, j) +offset_z));
         }
 
         // Using this loop, i will add data to my originArray, that is the first data in the signal.

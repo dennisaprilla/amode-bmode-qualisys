@@ -40,6 +40,10 @@ private:
 
     // all variables related to amode signal
     int nsample_;
+    int nsample_downsample_;
+    double downsample_ratio = 2.0;
+    bool isDownsample       = true;
+
     std::vector<AmodeConfig::Data> amodegroupdata_;
     QVector<int16_t> amodesignal_;
     Eigen::Matrix<double, 4, Eigen::Dynamic> amode3dsignal_;

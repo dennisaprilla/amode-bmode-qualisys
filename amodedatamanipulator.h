@@ -2,6 +2,7 @@
 #define AMODEDATAMANIPULATOR_H
 
 #include <QVector>
+#include <Eigen/Dense>
 
 /**
  * @brief AmodeDataManipulator is just a collection of function that will be used for manipulating A-mode data vector.
@@ -16,9 +17,14 @@ public:
     static QVector<int16_t> getRow(const QVector<int16_t>& input, int rowNumber, int totalColumns);
 
     /**
-     * @brief A function for downsampling the amode data vector
+     * @brief A function for downsampling the amode data vector. It takes QVector<int16_t> and returns QVector<int16_t>
      */
     static QVector<int16_t> downsampleVector(const QVector<int16_t>& input, int targetSize);
+
+    /**
+     * @brief A function for downsampling the amode data vector. It takes Eigen::VectorXd and returns Eigen::VectorXd
+     */
+    static Eigen::VectorXd downsampleVector(const Eigen::VectorXd& input, int targetSize);
 };
 
 #endif // AMODEDATAMANIPULATOR_H

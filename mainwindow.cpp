@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->customPlot->addGraph();
     ui->customPlot->xAxis->setLabel("x");
     ui->customPlot->yAxis->setLabel("y");
-    ui->customPlot->xAxis->setRange(0, 3500);
+    ui->customPlot->xAxis->setRange(0, 875);
     ui->customPlot->yAxis->setRange(-500, 7500);
     ui->customPlot->replot();
 
@@ -700,7 +700,7 @@ void MainWindow::disconnectUSsignal()
 void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
 {
     // downsample size
-    int downsample_size = 500;
+    int downsample_size = 875;
 
     // Check if Amode config file is already loaded. Why matters? because i need to adjust the UI if the user load the config
     // When myAmodeConfig is nullptr it means the config is not yet loaded.
@@ -716,7 +716,7 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
         if (usdata_qvint16_rowsel.size()==0) return;
         // convert to double
         QVector<double> usdata_qvdouble;
-        std::transform(usdata_qvint16_rowsel.begin(), usdata_qvint16_rowsel.end(), std::back_inserter(usdata_qvdouble), [] (double value) { return static_cast<double>(value); });
+        std::transform(usdata_qvint16_downsmp.begin(), usdata_qvint16_downsmp.end(), std::back_inserter(usdata_qvdouble), [] (double value) { return static_cast<double>(value); });
 
         // create x-axis
         QVector<double> x(usdata_qvdouble.size());
@@ -744,7 +744,7 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
             if (usdata_qvint16_rowsel.size()==0) return;
             // convert to double
             QVector<double> usdata_qvdouble;
-            std::transform(usdata_qvint16_rowsel.begin(), usdata_qvint16_rowsel.end(), std::back_inserter(usdata_qvdouble), [] (double value) { return static_cast<double>(value); });
+            std::transform(usdata_qvint16_downsmp.begin(), usdata_qvint16_downsmp.end(), std::back_inserter(usdata_qvdouble), [] (double value) { return static_cast<double>(value); });
 
             // create x-axis
             QVector<double> x(usdata_qvdouble.size());
@@ -826,7 +826,7 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         current_plot->addGraph();
         current_plot->xAxis->setLabel("x");
         current_plot->yAxis->setLabel("y");
-        current_plot->xAxis->setRange(0, 3500);
+        current_plot->xAxis->setRange(0, 875);
         current_plot->yAxis->setRange(-500, 7500);
         current_plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -923,6 +923,9 @@ void MainWindow::on_checkBox_volumeShow3DSignal_clicked(bool checked)
         // for note: i declare intentionally the argument for amode_group as value not the reference (a pointer to amode_group)
         // because amode_group here declared locally, so the reference will be gone outside of this scope.
         myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group, myAmodeConnection->getNsample());
+        myVolumeAmodeController->setSignalDisplayMode(ui->comboBox_volume3DSignalMode->currentIndex());
+
+        // connect necessary slots
         connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
         connect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
     }
