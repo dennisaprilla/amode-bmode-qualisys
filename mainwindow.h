@@ -55,12 +55,13 @@ private slots:
     void on_pushButton_volumeReconstruct_clicked();
     void on_pushButton_volumeBrowseConfig_clicked();
     void on_pushButton_volumeBrowseRecording_clicked();
-    void on_checkBox_volumeShow3DSignal_stateChanged(int arg1);
+    void on_checkBox_volumeShow3DSignal_clicked(bool checked);
 
     void on_pushButton_mhaPath_clicked();
     void on_pushButton_volumeBrowseOutput_clicked();
     void on_checkBox_autoReconstruct_stateChanged(int arg1);
     void on_comboBox_volume3DSignalMode_currentIndexChanged(int index);
+
 
 private:
     void slotConnect_Bmode2d3d();

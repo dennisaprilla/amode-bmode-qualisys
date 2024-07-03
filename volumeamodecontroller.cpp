@@ -306,7 +306,7 @@ void VolumeAmodeController::visualize3DSignal()
         // remove the near field disturbance
         amodesignal_rowsel_eigenVector.head(200).setZero();
         // store it to our amode3dsignal_
-        amode3dsignal_.row(0) = amodesignal_rowsel_eigenVector * 0.001; // x-coordinate
+        amode3dsignal_.row(0) = amodesignal_rowsel_eigenVector * 0.0015; // x-coordinate
 
         // Get the size of the data (that is the samples in the signal)
         int arraysize = amode3dsignal_.cols();

@@ -274,9 +274,6 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
             ui->layout_Bmode2D3D_content->setStretch(0,3);
             ui->layout_Bmode2D3D_content->setStretch(2,7);            
 
-            // Change the text
-            ui->pushButton_bmode2d3d->setText("Pause");
-
             // Change the flag
             isBmode2d3dFirstStream = false;
         }
@@ -287,16 +284,34 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
         {
             slotConnect_Bmode2d3d();
         }
+
+        // Change the text
+        ui->pushButton_bmode2d3d->setText("Pause");
+        // change the isBmode2d3dStream to be false
+        isBmode2d3dStream = false;
+
+        // [!] Because of performance issue when visualizing Bmode2d3d and Amode2d3d at the same time,
+        // we need to stop one and and continue the other
+        isAmodeStream = false;
+        on_pushButton_amodeConnect_clicked();
+        isAmodeStream = true;
+
+        // [!] We also need to stop the 3d volume amode signal visualization by unchecking the show signal
+        on_checkBox_volumeShow3DSignal_clicked(false);
+        ui->checkBox_volumeShow3DSignal->setCheckState(Qt::Unchecked);
     }
 
     // if the user click pause, let's disconnect all the slots to myBmode3Dvisualizer and myQualisysConnection
     else
     {
+
+
         ui->pushButton_bmode2d3d->setText("Continue");
         slotDisconnect_Bmode2d3d();
-    }
 
-    isBmode2d3dStream = !isBmode2d3dStream;
+        // change the isBmode2d3dStream to be true
+        isBmode2d3dStream = true;
+    }
 }
 
 void MainWindow::slotConnect_Bmode2d3d()
@@ -627,6 +642,12 @@ void MainWindow::on_pushButton_amodeConnect_clicked()
 
         // change the state of isAmodeStream to be false
         isAmodeStream = false;
+
+        // [!] Because of performance issue when visualizing Bmode2d3d and Amode2d3d at the same time,
+        // we need to stop one and and continue the other
+        isBmode2d3dStream = false;
+        on_pushButton_bmode2d3d_clicked();
+        isBmode2d3dStream = true;
     }
 
 
@@ -634,6 +655,12 @@ void MainWindow::on_pushButton_amodeConnect_clicked()
     // Hence when clicked all connection to Amode Machine will be disconnected.
     else
     {
+        // I add this condition, because if the user clicked the connect button for bmode2d3d, it will trigger
+        // this function with isAmodeStream=false (which is this block of code). The problem is if the user never
+        // click amodeConnect button before, this part will be executed and myAmodeConnection is still not initialized
+        // yet. To prevent this to happen, i just put this condition below.
+        if(myAmodeConnection == nullptr) return;
+
         // disconnect the slots
         disconnect(myAmodeConnection, &AmodeConnection::dataReceived, this, &MainWindow::displayUSsignal);
         disconnect(myAmodeConnection, &AmodeConnection::errorOccured, this, &MainWindow::disconnectUSsignal);
@@ -856,22 +883,32 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
  * *****************************************************************************************
  * ***************************************************************************************** */
 
-void MainWindow::on_checkBox_volumeShow3DSignal_stateChanged(int arg1)
+
+void MainWindow::on_comboBox_volume3DSignalMode_currentIndexChanged(int index)
+{
+    // check wheter A-mode config already initialized
+    if (myVolumeAmodeController==nullptr) return;
+
+    // if yes, now you can change the 3d signal display mode
+    myVolumeAmodeController->setSignalDisplayMode(index);
+}
+
+
+void MainWindow::on_checkBox_volumeShow3DSignal_clicked(bool checked)
 {
     // if the checkbox is now true, let's initialize the amode 3d visualization
-    if(arg1)
+    if(checked)
     {
-        // check wheter A-mode config already initialized
-        if(myAmodeConfig==nullptr)
+        if(myQualisysConnection==nullptr || myAmodeConnection==nullptr)
         {
-            QMessageBox::warning(this, "Can't show signal", "To show 3D signal, please load the amode configuration file first.");
+            QMessageBox::warning(this, "Can't show signal", "To show 3D signal, please connect both amode ultrasound system and motion capture system.");
             ui->checkBox_volumeShow3DSignal->setCheckState(Qt::Unchecked);
             return;
         }
 
-        if(myQualisysConnection==nullptr)
+        if(myAmodeConfig==nullptr)
         {
-            QMessageBox::warning(this, "Can't show signal", "To show 3D signal, please connect to motion capture system.");
+            QMessageBox::warning(this, "Can't show signal", "To show 3D signal, please load the amode configuration file first.");
             ui->checkBox_volumeShow3DSignal->setCheckState(Qt::Unchecked);
             return;
         }
@@ -893,23 +930,22 @@ void MainWindow::on_checkBox_volumeShow3DSignal_stateChanged(int arg1)
     // if the checkbox is now false, let's disconnect the signal to the class and delete the class
     else
     {
-        disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
-        disconnect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
+        // I add this condition, because if the user clicked the connect button for bmode2d3d, it will trigger
+        // this function with arg1=false (which is this block of code). The problem is if the user never
+        // click show3Dsignal checkboxbefore, this part will be executed and myQualisysConnection, myAmodeConnection
+        // and myVolumeAmodeController are still not initialized yet. To prevent this to happen, i just put this condition below.
+
+        if(myQualisysConnection != nullptr && myVolumeAmodeController != nullptr)
+            disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
+
+        if(myAmodeConnection != nullptr && myVolumeAmodeController != nullptr)
+            disconnect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
+
         delete myVolumeAmodeController;
         myVolumeAmodeController = nullptr;
 
         // enable changing the state of combo box for variation display mode for amode 3d signal
         ui->comboBox_volume3DSignalMode->setEnabled(false);
     }
-}
-
-
-void MainWindow::on_comboBox_volume3DSignalMode_currentIndexChanged(int index)
-{
-    // check wheter A-mode config already initialized
-    if (myVolumeAmodeController==nullptr) return;
-
-    // if yes, now you can change the 3d signal display mode
-    myVolumeAmodeController->setSignalDisplayMode(index);
 }
 
