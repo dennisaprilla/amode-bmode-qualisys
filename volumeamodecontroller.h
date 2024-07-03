@@ -15,7 +15,7 @@ class VolumeAmodeController : public QObject
     Q_OBJECT
 
 public:
-    VolumeAmodeController(QObject *parent = nullptr, Q3DScatter *scatter = nullptr, std::vector<AmodeConfig::Data> amodegroupdata = std::vector<AmodeConfig::Data>());
+    VolumeAmodeController(QObject *parent = nullptr, Q3DScatter *scatter = nullptr, std::vector<AmodeConfig::Data> amodegroupdata = std::vector<AmodeConfig::Data>(), int nsample=3500);
     ~VolumeAmodeController();
 
     void setSignalDisplayMode(int mode);
@@ -39,10 +39,19 @@ private:
     std::vector<QScatter3DSeries> all_series_;
 
     // all variables related to amode signal
+    int nsample_;
     std::vector<AmodeConfig::Data> amodegroupdata_;
     QVector<int16_t> amodesignal_;
-    Eigen::Matrix<double, 4, 3500> amode3dsignal_;
-    std::vector<Eigen::Matrix<double, 4, 3500>> all_amode3dsignal_;
+    Eigen::Matrix<double, 4, Eigen::Dynamic> amode3dsignal_;
+    std::vector<Eigen::Matrix<double, 4, Eigen::Dynamic>> all_amode3dsignal_;
+
+    // all variables related to ultrasound specification
+    int us_vsound_     = 1540;      // [m/s]
+    int us_samplerate_ = 50000000;  // [Hz]
+    double us_period_;
+    double us_idx2dist_constant_;
+    Eigen::VectorXd us_dvector_;
+    Eigen::VectorXd us_tvector_;
 
     // all variables related to transformations
     Eigen::Isometry3d currentT_holder_camera;

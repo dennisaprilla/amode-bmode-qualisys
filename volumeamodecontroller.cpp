@@ -43,18 +43,23 @@ bool readCsvIntoEigenVectorXd(const QString &filePath, Eigen::VectorXd &vector1,
     return true;
 }
 
-VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatter, std::vector<AmodeConfig::Data> amodegroupdata)
-    : QObject{parent}, scatter_(scatter), amodegroupdata_(amodegroupdata)
+VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatter, std::vector<AmodeConfig::Data> amodegroupdata, int nsample)
+    : QObject{parent}, scatter_(scatter), nsample_(nsample), amodegroupdata_(amodegroupdata)
 {
-    // // The code below is for [prototying]
-    Eigen::VectorXd vector1, vector2;
-    if (!readCsvIntoEigenVectorXd("D:/testamodesignal_26_3500.csv", vector1, vector2)) {
-        qDebug() << "Failed to read the CSV file into Eigen vectors.";
-    }
-    amode3dsignal_.row(0) = vector2 * 0.001; // x-coordinate
-    amode3dsignal_.row(1) = vector1; // y-coordinate
-    amode3dsignal_.row(2).setZero(); // z-coordinate
-    amode3dsignal_.row(3).setOnes(); // 1 (homogeneous)
+    // first resize the amode3dsignal matrix according to nsample_ of amode signal
+    amode3dsignal_.resize(Eigen::NoChange, nsample_);
+
+    // Calculate necessary constants
+    us_period_            = 1.0 / (us_samplerate_);                                                     // [s]
+    us_idx2dist_constant_ = (1000.0 * us_vsound_) / (2.0 * us_samplerate_);                             // [mm]
+    us_dvector_           = Eigen::VectorXd::LinSpaced(nsample_, 1, nsample_) * us_idx2dist_constant_;  // [[mm]]
+    us_tvector_           = Eigen::VectorXd::LinSpaced(nsample_, 1, nsample_) * us_period_ * 1000000;   // [[mu s]]
+
+    // initialize the amode3dsignal
+    amode3dsignal_.row(0).setZero();     // x-coordinate
+    amode3dsignal_.row(1) = us_dvector_; // y-coordinate
+    amode3dsignal_.row(2).setZero();     // z-coordinate
+    amode3dsignal_.row(3).setOnes();     // 1 (homogeneous)
 
     // initialize transformations
     currentT_holder_camera = Eigen::Isometry3d::Identity();
@@ -63,6 +68,7 @@ VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatte
         currentT_ustip_camera.push_back(Eigen::Isometry3d::Identity());
         currentT_ustip_camera_Qt.push_back(Eigen::Isometry3d::Identity());
     }
+
     // initialize points
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
@@ -299,10 +305,9 @@ void VolumeAmodeController::visualize3DSignal()
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
         // select the row from the whole amode data
-        QVector<int16_t> amodesignal_rowsel = AmodeDataManipulator::getRow(amodesignal_, amodegroupdata_.at(i).number-1, 3500);
+        QVector<int16_t> amodesignal_rowsel = AmodeDataManipulator::getRow(amodesignal_, amodegroupdata_.at(i).number-1, nsample_);
         // convert to Eigen::VectorXd
-        Eigen::VectorXd amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(
-                                                                    amodesignal_rowsel.constData(), amodesignal_rowsel.size()).cast<double>();
+        Eigen::VectorXd amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(amodesignal_rowsel.constData(), amodesignal_rowsel.size()).cast<double>();
         // remove the near field disturbance
         amodesignal_rowsel_eigenVector.head(200).setZero();
         // store it to our amode3dsignal_

@@ -922,7 +922,7 @@ void MainWindow::on_checkBox_volumeShow3DSignal_clicked(bool checked)
         // instantiate myVolumeAmodeController
         // for note: i declare intentionally the argument for amode_group as value not the reference (a pointer to amode_group)
         // because amode_group here declared locally, so the reference will be gone outside of this scope.
-        myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
+        myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group, myAmodeConnection->getNsample());
         connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
         connect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
     }
