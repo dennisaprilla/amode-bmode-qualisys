@@ -19,6 +19,7 @@ SOURCES += \
     mhareader.cpp \
     mhawriter.cpp \
     qcustomplot.cpp \
+    qcustomplotintervalwindow.cpp \
     qualisysconnection.cpp \
     qualisystransformationmanager.cpp \
     volume3dcontroller.cpp \
@@ -34,6 +35,7 @@ HEADERS += \
     mhareader.h \
     mhawriter.h \
     qcustomplot.h \
+    qcustomplotintervalwindow.h \
     qualisysconnection.h \
     qualisystransformationmanager.h \
     ultrasoundconfig.h \

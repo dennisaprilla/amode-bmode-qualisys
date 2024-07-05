@@ -485,7 +485,7 @@
          <item>
           <layout class="QVBoxLayout" name="layout_Amode" stretch="0,1">
            <item>
-            <layout class="QHBoxLayout" name="layout_Amode_menu" stretch="0,0,0,0,0,3,0,0,1">
+            <layout class="QHBoxLayout" name="layout_Amode_menu" stretch="0,0,0,0,0,0,0,3,1,0">
              <item>
               <widget class="QLabel" name="label">
                <property name="text">
@@ -528,19 +528,6 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <widget class="QLineEdit" name="lineEdit_amodeConfig">
                <property name="enabled">
                 <bool>false</bool>
@@ -564,6 +551,19 @@
               </widget>
              </item>
              <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QComboBox" name="comboBox_amodeNumber">
                <item>
                 <property name="text">
@@ -572,14 +572,17 @@
                </item>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_amodeWindow">
+               <property name="text">
+                <string>Save Window</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
-            <layout class="QGridLayout" name="gridLayout_amodeSignals">
-             <item row="0" column="0">
-              <widget class="QCustomPlot" name="customPlot" native="true"/>
-             </item>
-            </layout>
+            <layout class="QGridLayout" name="gridLayout_amodeSignals"/>
            </item>
           </layout>
          </item>
@@ -602,14 +605,6 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QCustomPlot</class>
-   <extends>QWidget</extends>
-   <header>qcustomplot.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

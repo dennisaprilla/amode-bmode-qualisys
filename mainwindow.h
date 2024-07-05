@@ -11,6 +11,7 @@
 #include "bmodeconnection.h"
 #include "bmode3dvisualizer.h"
 #include "qcustomplot.h"
+#include "qcustomplotintervalwindow.h"
 #include "qualisysconnection.h"
 #include "mhawriter.h"
 #include "mhareader.h"
@@ -86,6 +87,7 @@ private:
     QProcess* process;                          //!< For invoking command prompt
 
     // for amode 2d plots
+    QCustomPlotIntervalWindow *amodePlot;
     std::vector<QCustomPlot*> amodePlots;       //!< For handling amode 2d plots visualization
     Eigen::VectorXd us_dvector_;                //!< Stores the array of distances, used by plots
     Eigen::VectorXd us_dvector_downsampled_;    //!< Same as us_dvector_, but downsampled

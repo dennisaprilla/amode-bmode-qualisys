@@ -26,14 +26,26 @@ MainWindow::MainWindow(QWidget *parent)
     us_tvector_downsampled_ = AmodeDataManipulator::downsampleVector(us_tvector_, round((double)UltrasoundConfig::N_SAMPLE / downsample_ratio_));
     downsample_nsample_     = us_dvector_downsampled_.size();
 
-    // Initialize the QCustomPlot for A-mode signal, can only be done programatically
-    ui->customPlot->setObjectName("amode_originalplot");
-    ui->customPlot->addGraph();
-    ui->customPlot->xAxis->setLabel("Depth (mm)");
-    ui->customPlot->yAxis->setLabel("Amplitude");
-    ui->customPlot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
-    ui->customPlot->yAxis->setRange(-500, 7500);
-    ui->customPlot->replot();
+    // test create a new QCustomPlot object
+    amodePlot = new QCustomPlotIntervalWindow(this);
+    amodePlot->setObjectName("amode_originalplot");
+    amodePlot->setShadeColor(QColor(255, 0, 0, 50));
+    amodePlot->setInitialSpacing(3);
+    amodePlot->xAxis->setLabel("Depth (mm)");
+    amodePlot->yAxis->setLabel("Amplitude");
+    amodePlot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
+    amodePlot->yAxis->setRange(-500, 7500);
+    amodePlot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->gridLayout_amodeSignals->addWidget(amodePlot);
+
+    // // Initialize the QCustomPlot for A-mode signal, can only be done programatically
+    // ui->customPlot->setObjectName("amode_originalplot");
+    // ui->customPlot->addGraph();
+    // ui->customPlot->xAxis->setLabel("Depth (mm)");
+    // ui->customPlot->yAxis->setLabel("Amplitude");
+    // ui->customPlot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
+    // ui->customPlot->yAxis->setRange(-500, 7500);
+    // ui->customPlot->replot();
 
     // Initalize scatter object, can also only be done programatically
     scatter = new Q3DScatter();
@@ -726,8 +738,8 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
         // create x-axis
         QVector<double> x(us_dvector_downsampled_.data(), us_dvector_downsampled_.data() + us_dvector_downsampled_.size());
         // draw the plot
-        ui->customPlot->graph(0)->setData(x, usdata_qvdouble);
-        ui->customPlot->replot();
+        amodePlot->graph(0)->setData(x, usdata_qvdouble);
+        amodePlot->replot();
     }
 
     // If the config file is already loaded, do almost similar thing but with several signal at once.
@@ -824,9 +836,9 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         std::string str_num = "amode_plot" + std::to_string(amode_group.at(i).number);
 
         // create a new QCustomPlot object
-        QCustomPlot *current_plot = new QCustomPlot(this);
+        QCustomPlotIntervalWindow *current_plot = new QCustomPlotIntervalWindow(this);
         current_plot->setObjectName(str_num);
-        current_plot->addGraph();
+        current_plot->setInitialSpacing(3);
         current_plot->xAxis->setLabel("Depth (mm)");
         current_plot->yAxis->setLabel("Amplitude");
         current_plot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
