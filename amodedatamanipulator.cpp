@@ -1,10 +1,13 @@
 #include "amodedatamanipulator.h"
+#include <algorithm>
+#include <cmath>
 
 QVector<int16_t> AmodeDataManipulator::getRow(const QVector<int16_t>& input, int rowNumber, int totalColumns) {
     int startIndex = rowNumber * totalColumns;
     return input.mid(startIndex, totalColumns);
 }
 
+/*
 QVector<int16_t> AmodeDataManipulator::downsampleVector(const QVector<int16_t>& input, int targetSize) {
     QVector<int16_t> output;
     output.reserve(targetSize);
@@ -20,6 +23,24 @@ QVector<int16_t> AmodeDataManipulator::downsampleVector(const QVector<int16_t>& 
 
     // Remove the '0' elements which are placeholders for non-sampled elements
     output.erase(std::remove(output.begin(), output.end(), 0), output.end());
+
+    return output;
+}
+*/
+
+QVector<int16_t> AmodeDataManipulator::downsampleVector(const QVector<int16_t>& input, int targetSize) {
+    if (targetSize <= 0 || input.isEmpty()) {
+        return QVector<int16_t>();
+    }
+
+    QVector<int16_t> output(targetSize);
+    double step = static_cast<double>(input.size() - 1) / (targetSize - 1);
+
+    std::generate(output.begin(), output.end(), [&input, step, n = 0]() mutable {
+        int index = std::min<int>(static_cast<int>(std::round(n * step)), input.size() - 1);
+        ++n;
+        return input[index];
+    });
 
     return output;
 }

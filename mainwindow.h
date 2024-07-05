@@ -81,15 +81,25 @@ private:
     Volume3DController *myVolume3DController        = nullptr;
     VolumeAmodeController *myVolumeAmodeController  = nullptr;
 
-    // for amode 2d plots
-    std::vector<QCustomPlot*> amodePlots;   //!< For handling amode 2d plots visualization
-    Q3DScatter *scatter;                    //!< For handling amode 3d plots and 3d volume visualization
-    QProcess* process;                      //!< For invoking command prompt
+    // for
+    Q3DScatter *scatter;                        //!< For handling amode 3d plots and 3d volume visualization
+    QProcess* process;                          //!< For invoking command prompt
 
-    bool isMHArecord            = true;     //!< Flag to inform whether we are ready for recording MHA or not
-    bool isBmode2d3dStream      = true;     //!< Flag to inform whether we are ready to stream B-mode 2d image and 3d visualize it or not
-    bool isBmode2d3dFirstStream = true;     //!< Flag to inform whether it is the first time to stream B-mode 2d image and qualisys or not
-    bool isAmodeStream          = true;     //!< Flag to inform whether we are ready to stream A-mode data or not
+    // for amode 2d plots
+    std::vector<QCustomPlot*> amodePlots;       //!< For handling amode 2d plots visualization
+    Eigen::VectorXd us_dvector_;                //!< Stores the array of distances, used by plots
+    Eigen::VectorXd us_dvector_downsampled_;    //!< Same as us_dvector_, but downsampled
+    Eigen::VectorXd us_tvector_;                //!< Stores the array of time, used by plots
+    Eigen::VectorXd us_tvector_downsampled_;    //!< Same as us_tvector_, but downsampled
+    double downsample_ratio_ = 4.0;             //!< Downsample ratio, used to reduce the amount of data being visualized in 2d plots
+    int downsample_nsample_;                    //!< The real length of the downsampled array
+
+    bool isMHArecord            = true;         //!< Flag to inform whether we are ready for recording MHA or not
+    bool isBmode2d3dStream      = true;         //!< Flag to inform whether we are ready to stream B-mode 2d image and 3d visualize it or not
+    bool isBmode2d3dFirstStream = true;         //!< Flag to inform whether it is the first time to stream B-mode 2d image and qualisys or not
+    bool isAmodeStream          = true;         //!< Flag to inform whether we are ready to stream A-mode data or not
+
+
 
 };
 #endif // MAINWINDOW_H

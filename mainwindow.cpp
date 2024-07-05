@@ -8,6 +8,7 @@
 #include <regex>
 #include "qualisystransformationmanager.h"
 #include "amodedatamanipulator.h"
+#include "ultrasoundconfig.h"
 
 #include <Qt3DExtras/Qt3DWindow>
 #include <QtWidgets/QHBoxLayout>
@@ -18,12 +19,19 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // Initialize d_vector and t_vector for plotting purposes
+    us_dvector_             = Eigen::VectorXd::LinSpaced(UltrasoundConfig::N_SAMPLE, 1, UltrasoundConfig::N_SAMPLE) * UltrasoundConfig::DS;             // [[mm]]
+    us_tvector_             = Eigen::VectorXd::LinSpaced(UltrasoundConfig::N_SAMPLE, 1, UltrasoundConfig::N_SAMPLE) * UltrasoundConfig::DT * 1000000;   // [[mu s]]
+    us_dvector_downsampled_ = AmodeDataManipulator::downsampleVector(us_dvector_, round((double)UltrasoundConfig::N_SAMPLE / downsample_ratio_));
+    us_tvector_downsampled_ = AmodeDataManipulator::downsampleVector(us_tvector_, round((double)UltrasoundConfig::N_SAMPLE / downsample_ratio_));
+    downsample_nsample_     = us_dvector_downsampled_.size();
+
     // Initialize the QCustomPlot for A-mode signal, can only be done programatically
     ui->customPlot->setObjectName("amode_originalplot");
     ui->customPlot->addGraph();
-    ui->customPlot->xAxis->setLabel("x");
-    ui->customPlot->yAxis->setLabel("y");
-    ui->customPlot->xAxis->setRange(0, 875);
+    ui->customPlot->xAxis->setLabel("Depth (mm)");
+    ui->customPlot->yAxis->setLabel("Amplitude");
+    ui->customPlot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
     ui->customPlot->yAxis->setRange(-500, 7500);
     ui->customPlot->replot();
 
@@ -699,9 +707,6 @@ void MainWindow::disconnectUSsignal()
 
 void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
 {
-    // downsample size
-    int downsample_size = 875;
-
     // Check if Amode config file is already loaded. Why matters? because i need to adjust the UI if the user load the config
     // When myAmodeConfig is nullptr it means the config is not yet loaded.
     if (myAmodeConfig == nullptr)
@@ -711,7 +716,7 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
         // select row
         QVector<int16_t> usdata_qvint16_rowsel = AmodeDataManipulator::getRow(usdata_qvint16_, ui->comboBox_amodeNumber->currentIndex(), myAmodeConnection->getNsample());
         // down sample for display purposes
-        QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(usdata_qvint16_rowsel, downsample_size);
+        QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(usdata_qvint16_rowsel, downsample_nsample_);
         // skip the data if we got all zeros, usually because of the TCP connection
         if (usdata_qvint16_rowsel.size()==0) return;
         // convert to double
@@ -719,8 +724,7 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
         std::transform(usdata_qvint16_downsmp.begin(), usdata_qvint16_downsmp.end(), std::back_inserter(usdata_qvdouble), [] (double value) { return static_cast<double>(value); });
 
         // create x-axis
-        QVector<double> x(usdata_qvdouble.size());
-        std::iota(x.begin(), x.end(), 1);
+        QVector<double> x(us_dvector_downsampled_.data(), us_dvector_downsampled_.data() + us_dvector_downsampled_.size());
         // draw the plot
         ui->customPlot->graph(0)->setData(x, usdata_qvdouble);
         ui->customPlot->replot();
@@ -739,7 +743,7 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
             // select row
             QVector<int16_t> usdata_qvint16_rowsel = AmodeDataManipulator::getRow(usdata_qvint16_, amode_group.at(i).number-1, myAmodeConnection->getNsample());
             // down sample for display purposes
-            QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(usdata_qvint16_rowsel, downsample_size);
+            QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(usdata_qvint16_rowsel, downsample_nsample_);
             // skip the data if we got all zeros, usually because of the TCP connection
             if (usdata_qvint16_rowsel.size()==0) return;
             // convert to double
@@ -747,8 +751,7 @@ void MainWindow::displayUSsignal(const std::vector<uint16_t> &usdata_uint16_)
             std::transform(usdata_qvint16_downsmp.begin(), usdata_qvint16_downsmp.end(), std::back_inserter(usdata_qvdouble), [] (double value) { return static_cast<double>(value); });
 
             // create x-axis
-            QVector<double> x(usdata_qvdouble.size());
-            std::iota(x.begin(), x.end(), 1);
+            QVector<double> x(us_dvector_downsampled_.data(), us_dvector_downsampled_.data() + us_dvector_downsampled_.size());
             // draw the plot
             amodePlots.at(i)->graph(0)->setData(x, usdata_qvdouble);
             amodePlots.at(i)->replot();
@@ -824,9 +827,9 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         QCustomPlot *current_plot = new QCustomPlot(this);
         current_plot->setObjectName(str_num);
         current_plot->addGraph();
-        current_plot->xAxis->setLabel("x");
-        current_plot->yAxis->setLabel("y");
-        current_plot->xAxis->setRange(0, 875);
+        current_plot->xAxis->setLabel("Depth (mm)");
+        current_plot->yAxis->setLabel("Amplitude");
+        current_plot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
         current_plot->yAxis->setRange(-500, 7500);
         current_plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -844,7 +847,8 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         }
         if (amode_group.size()==2)
         {
-            ui->gridLayout_amodeSignals->addWidget(current_plot, bit1, bit2, 2,1);
+            // ui->gridLayout_amodeSignals->addWidget(current_plot, bit1, bit2, 2,1);
+            ui->gridLayout_amodeSignals->addWidget(current_plot, bit2, bit1, 1,2);
         }
         if (amode_group.size()==3 || amode_group.size()==4)
         {
@@ -922,7 +926,7 @@ void MainWindow::on_checkBox_volumeShow3DSignal_clicked(bool checked)
         // instantiate myVolumeAmodeController
         // for note: i declare intentionally the argument for amode_group as value not the reference (a pointer to amode_group)
         // because amode_group here declared locally, so the reference will be gone outside of this scope.
-        myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group, myAmodeConnection->getNsample());
+        myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
         myVolumeAmodeController->setSignalDisplayMode(ui->comboBox_volume3DSignalMode->currentIndex());
 
         // connect necessary slots

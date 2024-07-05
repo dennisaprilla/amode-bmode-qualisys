@@ -36,6 +36,7 @@ HEADERS += \
     qcustomplot.h \
     qualisysconnection.h \
     qualisystransformationmanager.h \
+    ultrasoundconfig.h \
     volume3dcontroller.h \
     volumeamodecontroller.h
 

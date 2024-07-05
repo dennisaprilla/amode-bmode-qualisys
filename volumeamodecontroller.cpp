@@ -4,77 +4,34 @@
 
 #include "volumeamodecontroller.h"
 #include "amodedatamanipulator.h"
+#include "ultrasoundconfig.h"
 
-bool readCsvIntoEigenVectorXd(const QString &filePath, Eigen::VectorXd &vector1, Eigen::VectorXd &vector2) {
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "Cannot open file for reading";
-        return false;
-    }
-
-    QTextStream in(&file);
-    int lineNumber = 0;
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        QStringList values = line.split(';');
-
-        // Resize the Eigen::VectorXd to fit the number of values in the CSV row
-        if (lineNumber == 0) {
-            vector1.resize(values.size());
-        } else if (lineNumber == 1) {
-            vector2.resize(values.size());
-        }
-
-        int colIndex = 0;
-        for (const QString &val : values) {
-            bool ok;
-            double num = val.toDouble(&ok);
-            if (ok) {
-                if (lineNumber == 0) {
-                    vector1(colIndex) = num;
-                } else if (lineNumber == 1) {
-                    vector2(colIndex) = num;
-                }
-                ++colIndex;
-            }
-        }
-        ++lineNumber;
-        if (lineNumber > 1) break; // We only need two rows
-    }
-    file.close();
-    return true;
-}
-
-VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatter, std::vector<AmodeConfig::Data> amodegroupdata, int nsample)
-    : QObject{parent}, scatter_(scatter), nsample_(nsample), amodegroupdata_(amodegroupdata)
+VolumeAmodeController::VolumeAmodeController(QObject *parent, Q3DScatter *scatter, std::vector<AmodeConfig::Data> amodegroupdata)
+    : QObject{parent}, scatter_(scatter), amodegroupdata_(amodegroupdata)
 {
     // Calculate necessary constants
-    us_period_            = 1.0 / (us_samplerate_);                                                     // [s]
-    us_idx2dist_constant_ = (1000.0 * us_vsound_) / (2.0 * us_samplerate_);                             // [mm]
-    us_dvector_           = Eigen::VectorXd::LinSpaced(nsample_, 1, nsample_) * us_idx2dist_constant_;  // [[mm]]
-    us_tvector_           = Eigen::VectorXd::LinSpaced(nsample_, 1, nsample_) * us_period_ * 1000000;   // [[mu s]]
+    us_dvector_             = Eigen::VectorXd::LinSpaced(UltrasoundConfig::N_SAMPLE, 1, UltrasoundConfig::N_SAMPLE) * UltrasoundConfig::DS;             // [[mm]]
+    us_tvector_             = Eigen::VectorXd::LinSpaced(UltrasoundConfig::N_SAMPLE, 1, UltrasoundConfig::N_SAMPLE) * UltrasoundConfig::DT * 1000000;   // [[mu s]]
 
-
+    // I added option to downsample, for visualization performance
     if (isDownsample)
     {
         // downsample the us_dvector and get the length of the vector
-        Eigen::VectorXd us_dvector_downsampled = AmodeDataManipulator::downsampleVector(us_dvector_, round((double)nsample_ / downsample_ratio));
-        nsample_downsample_ = us_dvector_downsampled.size();
+        Eigen::VectorXd us_dvector_downsampled = AmodeDataManipulator::downsampleVector(us_dvector_, round((double)UltrasoundConfig::N_SAMPLE / downsample_ratio));
+        downsample_nsample_ = us_dvector_downsampled.size();
 
         // first resize the amode3dsignal matrix according to nsample_downsample_ (not nsample_)
-        amode3dsignal_.resize(Eigen::NoChange, nsample_downsample_);
+        amode3dsignal_.resize(Eigen::NoChange, downsample_nsample_);
         // initialize the amode3dsignal
         amode3dsignal_.row(0).setZero();     // x-coordinate
         amode3dsignal_.row(1) = us_dvector_downsampled; // y-coordinate
         amode3dsignal_.row(2).setZero();     // z-coordinate
         amode3dsignal_.row(3).setOnes();     // 1 (homogeneous)
-
-        qDebug() << "us_dvector_ target downsample: " << round((double)nsample_ / downsample_ratio);
     }
     else
     {
         // first resize the amode3dsignal matrix according to nsample_ of amode signal
-        amode3dsignal_.resize(Eigen::NoChange, nsample_);
+        amode3dsignal_.resize(Eigen::NoChange, UltrasoundConfig::N_SAMPLE);
         // initialize the amode3dsignal
         amode3dsignal_.row(0).setZero();     // x-coordinate
         amode3dsignal_.row(1) = us_dvector_; // y-coordinate
@@ -326,17 +283,18 @@ void VolumeAmodeController::visualize3DSignal()
     for(std::size_t i = 0; i < amodegroupdata_.size(); ++i)
     {
         // select the row from the whole amode data
-        QVector<int16_t> amodesignal_rowsel = AmodeDataManipulator::getRow(amodesignal_, amodegroupdata_.at(i).number-1, nsample_);
+        QVector<int16_t> amodesignal_rowsel = AmodeDataManipulator::getRow(amodesignal_, amodegroupdata_.at(i).number-1, UltrasoundConfig::N_SAMPLE);
 
         // if we decided to downsample, we need to downsample the amodesignal_rowsel first
         // before we assign to amode3dsignal_ so that the dimension will match
         Eigen::VectorXd amodesignal_rowsel_eigenVector;
-        int idx = 200;
+        int idx = 175;
         if(isDownsample)
         {
             // downsample
-            QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(amodesignal_rowsel, round((double)nsample_ / downsample_ratio));
+            QVector<int16_t> usdata_qvint16_downsmp = AmodeDataManipulator::downsampleVector(amodesignal_rowsel, round((double)UltrasoundConfig::N_SAMPLE / downsample_ratio));
 
+            /*
             // Let's check if the size of usdata_qvint16_downsmp different than amode3dsignal_.row(0), if it is different,
             // it will be a disaster when i want to assign the value of usdata_qvint16_downsmp to amode3dsignal_.row(0)
             //
@@ -354,6 +312,7 @@ void VolumeAmodeController::visualize3DSignal()
                     for (int j=0; j<abs(diff); j++) usdata_qvint16_downsmp.append(usdata_qvint16_downsmp.last());
                 }
             }
+            */
 
             // convert to Eigen::VectorXd
             amodesignal_rowsel_eigenVector = Eigen::Map<const Eigen::Matrix<int16_t, Eigen::Dynamic, 1>>(usdata_qvint16_downsmp.constData(), usdata_qvint16_downsmp.size()).cast<double>();
