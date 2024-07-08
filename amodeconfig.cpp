@@ -29,6 +29,7 @@ AmodeConfig::AmodeConfig(const std::string& filepath) {
         window.number       = entry.second.number;
         window.group        = entry.second.group;
         window.groupname    = entry.second.groupname;
+        window.isset        = 0;
         window.lowerbound   = 0.0;
         window.middle       = 0.0;
         window.upperbound   = 0.0;
@@ -77,7 +78,7 @@ bool AmodeConfig::exportWindow()
     }
 
     // Write CSV header
-    file << "Number,Group,GroupName,LowerBound,Middle,UpperBound\n";
+    file << "Number,Group,GroupName,IsSet,LowerBound,Middle,UpperBound\n";
 
     // Write data
     for (const auto& pair : dataWindow) {
@@ -85,6 +86,7 @@ bool AmodeConfig::exportWindow()
         file << window.number << ","
              << window.group << ","
              << window.groupname << ","
+             << window.isset << ","
              << window.lowerbound << ","
              << window.middle << ","
              << window.upperbound << "\n";
@@ -148,12 +150,26 @@ void AmodeConfig::setWindowByNumber(int number, std::array<std::optional<double>
     // Check if the key exists in the map
     if (dataWindow.find(number) != dataWindow.end())
     {
+        dataWindow[number].isset = 1;
         dataWindow[number].lowerbound = window[0].has_value() ? window[0].value() : 0.0;
         dataWindow[number].middle     = window[1].has_value() ? window[1].value() : 0.0;
         dataWindow[number].upperbound = window[2].has_value() ? window[2].value() : 0.0;
     }
     else
     {
+        throw std::runtime_error("Data not found for the given number.");
+    }
+}
+
+AmodeConfig::Window AmodeConfig::getWindowByNumber(int number)
+{
+    auto it = dataWindow.find(number);
+    if (it != dataWindow.end()) {
+        // Please notice that the window is not in a type std::array<std::optional<double>, 3>
+        // since this class will handle exporting data to csv, we only can write or read with double
+        // so this function will return a Window object with a double lowerbound,middle,upperbound
+        return it->second;
+    } else {
         throw std::runtime_error("Data not found for the given number.");
     }
 }

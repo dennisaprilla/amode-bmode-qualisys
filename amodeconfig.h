@@ -28,6 +28,7 @@ public:
         int number;
         int group;
         std::string groupname;
+        int isset;
         double lowerbound;
         double middle;
         double upperbound;
@@ -39,24 +40,29 @@ public:
     AmodeConfig(const std::string& filepath);
 
     /**
-     * @brief To get the configuration data with the provided probe number
+     * @brief To GET the configuration data with the provided probe number
      */
     Data getDataByNumber(int number) const;
 
     /**
-     * @brief To get the collection of configuration data with the provided group name
+     * @brief To GET the collection of configuration data with the provided group name
      */
     std::vector<Data> getDataByGroupName(const std::string& groupname) const;
 
     /**
-     * @brief To get unique group names in the configuration file
+     * @brief To GET unique group names in the configuration file
      */
     std::vector<std::string> getAllGroupNames() const;
 
     /**
-     * @brief To set the window configuration data with the provided probe number
+     * @brief To SET the window configuration data with the provided probe number
      */
     void setWindowByNumber(int number, std::array<std::optional<double>, 3> window);
+
+    /**
+     * @brief To GET the window configuration data with the provided probe number
+     */
+    Window getWindowByNumber(int number);
 
     /**
      * @brief To export dataWindow to a csv file in the directory provided by filename_

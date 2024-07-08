@@ -832,7 +832,7 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
 
     for(std::size_t i = 0; i < amode_group.size(); ++i)
     {
-        // for plot name
+        // create a string for the plot name
         std::string str_num = "amode_plot" + std::to_string(amode_group.at(i).number);
 
         // create a new QCustomPlot object
@@ -845,14 +845,27 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         current_plot->yAxis->setRange(-500, 7500);
         current_plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
+        // get the current window data from the current amode, if the window is already set for this
+        // current amode, let's draw the inital lines.
+        AmodeConfig::Window currentwindow = myAmodeConfig->getWindowByNumber(amode_group.at(i).number);
+        // if the currentwindow.middle is 0.0 it means that the window is not set yet,
+        // the condition i wrote below is a proper way to compare double
+        if(currentwindow.isset)
+        {
+            std::array<std::optional<double>, 3> window;
+            window[0] = currentwindow.lowerbound;
+            window[1] = currentwindow.middle;
+            window[2] = currentwindow.upperbound;
+            current_plot->setInitialLines(window);
+        }
+
         // store the plot to our vector, collection of plots
         amodePlots.push_back(current_plot);
 
-        // prepare the position of that somethine
+        // this part is just for visualization organization, i want the organization is a bit more automatic
+        // so that i could generate 00,01,10,11 according how many amode i want to plot
         short bit1 = (i >> 1) & 1;
         short bit2 = i & 1;
-
-        // this part is just for visualization organization
         if (amode_group.size()==1)
         {
             ui->gridLayout_amodeSignals->addWidget(current_plot, 0,0, 2,2);
@@ -868,7 +881,7 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
         }
     }
 
-    // I want to make this push button when changed, also change the 3d amode visualization
+    // I want to make this pushbutton, when changed, also change the 3d amode visualization
     if(myVolumeAmodeController == nullptr) return;
 
     // I already implemented a function inside myVolumeAmodeController to set a new amodegroupdata
@@ -881,7 +894,7 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
     delete myVolumeAmodeController;
     myVolumeAmodeController = nullptr;
 
-    // ...then reinitialize again. It's working. I don't care it is ugly.
+    // ...then reinitialize again. It's working. I don't care it is ugly. Bye.
     myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
     connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);
     connect(myAmodeConnection, &AmodeConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onAmodeSignalReceived);
@@ -910,6 +923,12 @@ void MainWindow::on_pushButton_amodeWindow_clicked()
         // get the current amodePlots object and get the positions of the line
         QCustomPlotIntervalWindow *current_plot = amodePlots.at(i);
         auto positions = current_plot->getLinePositions();
+
+        if(!positions[1].has_value())
+        {
+            QMessageBox::warning(this, "Saving cancelled", "There is one or more window that is yet to be set. Cancelling the saving.");
+            return;
+        }
 
         // set the window
         myAmodeConfig->setWindowByNumber(current_data.number, positions);
