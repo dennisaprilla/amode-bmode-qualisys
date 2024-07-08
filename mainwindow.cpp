@@ -889,6 +889,40 @@ void MainWindow::on_comboBox_amodeNumber_textActivated(const QString &arg1)
 }
 
 
+void MainWindow::on_pushButton_amodeWindow_clicked()
+{
+    if(myAmodeConfig==nullptr)
+    {
+        // Inform the user about the invalid input
+        QMessageBox::warning(this, "Cannot save window", "You need to open the amode configuration file first");
+        return;
+    }
+
+    // get the a-mode groups
+    std::vector<AmodeConfig::Data> amode_group = myAmodeConfig->getDataByGroupName(ui->comboBox_amodeNumber->currentText().toStdString());
+
+    // loop for all member of groups
+    for(std::size_t i = 0; i < amode_group.size(); ++i)
+    {
+        // get the current Config Data
+        AmodeConfig::Data current_data = amode_group.at(i);
+
+        // get the current amodePlots object and get the positions of the line
+        QCustomPlotIntervalWindow *current_plot = amodePlots.at(i);
+        auto positions = current_plot->getLinePositions();
+
+        // set the window
+        myAmodeConfig->setWindowByNumber(current_data.number, positions);
+    }
+
+    // save here
+    if(myAmodeConfig->exportWindow())
+        QMessageBox::information(this, "Saving success", "Window configuration is successfuly saved");
+    else
+        QMessageBox::information(this, "Saving failed", "There is something wrong when saving the window configuration file");
+
+
+}
 
 
 /* *****************************************************************************************

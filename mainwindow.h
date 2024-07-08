@@ -51,6 +51,7 @@ private slots:
     void on_pushButton_amodeConnect_clicked();
     void on_pushButton_amodeConfig_clicked();
     void on_comboBox_amodeNumber_textActivated(const QString &arg1);
+    void on_pushButton_amodeWindow_clicked();
 
     void on_pushButton_volumeLoad_clicked();
     void on_pushButton_volumeReconstruct_clicked();
@@ -62,6 +63,7 @@ private slots:
     void on_pushButton_volumeBrowseOutput_clicked();
     void on_checkBox_autoReconstruct_stateChanged(int arg1);
     void on_comboBox_volume3DSignalMode_currentIndexChanged(int index);
+
 
 
 private:
@@ -88,7 +90,7 @@ private:
 
     // for amode 2d plots
     QCustomPlotIntervalWindow *amodePlot;
-    std::vector<QCustomPlot*> amodePlots;       //!< For handling amode 2d plots visualization
+    std::vector<QCustomPlotIntervalWindow*> amodePlots;       //!< For handling amode 2d plots visualization
     Eigen::VectorXd us_dvector_;                //!< Stores the array of distances, used by plots
     Eigen::VectorXd us_dvector_downsampled_;    //!< Same as us_dvector_, but downsampled
     Eigen::VectorXd us_tvector_;                //!< Stores the array of time, used by plots

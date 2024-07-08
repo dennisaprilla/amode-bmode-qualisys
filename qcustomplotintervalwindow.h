@@ -10,6 +10,8 @@ class QCustomPlotIntervalWindow : public QCustomPlot
 
 public:
     explicit QCustomPlotIntervalWindow(QWidget *parent = nullptr);
+    // explicit QCustomPlotIntervalWindow(QWidget *parent = nullptr, std::array<std::optional<double>, 3> window = {std::nullopt, std::nullopt, std::nullopt});
+
     void setShadeColor(const QColor& color);
     void setInitialSpacing(double spacing);
     std::array<std::optional<double>, 3> getLinePositions() const;
