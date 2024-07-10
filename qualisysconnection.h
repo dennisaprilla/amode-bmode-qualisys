@@ -16,10 +16,31 @@
 #include <QObject>
 #include <QTimer>
 
+/**
+ * @class QualisysConnection
+ * @brief A class that hangle the communication with Qualisys Motion Capture System
+ *
+ * For the context. Qualisys motion tracking system is used to provides the position and oritentation of both
+ * B-mode ultrasound (for freehand tracking to generate bone surface) and A-mode ultrasound (for the navigation).
+ * Qualisys has their own SDK, and i include them in the .pro file for this Qt project. All the protocol is
+ * handled by the SDK, however, we still need to make our own program to call the functions, configure the settings,
+ * grab the data, etc.
+ *
+ */
+
 class QualisysConnection : public QObject
 {
     Q_OBJECT
 public:
+
+    /**
+     * @enum enumMessageType
+     * @brief For the type of message in the terminal
+     *
+     * Deprecated. I used this when i develop the software for CMD only. But now, it is not really that relevent.
+     * It is basically just to differentiate between message from A-mode machine and from Qualisys, and also to
+     * differentiate type of message. That's all.
+     */
     enum enumMessageType {
         MESSAGE_OK,
         MESSAGE_WARNING,
@@ -88,9 +109,12 @@ private:
     std::vector<double> rigidbodyData_;         //!< Contains value of rigidbodies.
     QualisysTransformationManager tmanager;     //!< manage the rigid body transformation tracked by qualisys
 
-    QTimer *timer;
+    QTimer *timer;                              //!< A timer, in which we check the data from Qualisys
 
 signals:
+    /**
+     * @brief Emits a tmanager, which consists of transformations of rigid body that is detected by Qualisys
+     */
     void dataReceived(const QualisysTransformationManager &tmanager);
 };
 

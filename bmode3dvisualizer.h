@@ -44,6 +44,15 @@ private:
     QImage image;
 };
 
+/**
+ * @class Bmode3DVisualizer
+ * @brief A class which handle the visualization of the 2D B-mode image in 3D environment.
+ *
+ * Context: The user will perform B-mode freehand scanning using this software. To make the software more intuitive,
+ * it is better to visualize the real time position and orientation of the B-mode ultrasound and its image. This class
+ * will visualize exactly just that.
+ *
+ */
 
 class Bmode3DVisualizer : public QWidget {
     Q_OBJECT

@@ -5,8 +5,22 @@
 #include <QObject>
 
 /**
- * @brief AmodeConnection is the class that will handle the communcation with A-mode PC
+ * @class AmodeConnection
+ * @brief A class that handle the communication with A-mode PC.
+ *
+ * For the context. We (ET-BE Departement of University of Twente) have a A-mode Ultrasound Machine (Diagnostic Sonar)
+ * which comes with its own PC. The PC is old and it is "forbidden" to develop a new software (such as Qt) because it
+ * requires softwares installation or OS updates which will disrupt the ultrasound signal acquisition software in the PC.
+ * So i created a program, based on LabView (in which the acquisition software based on) to send the data through TCP,
+ * so that anybody now could stream the data using their own PC. This class is the class which handle the communication
+ * with my software in the ultrasoun PC. See testgarbage_v21_streamWithPeaks.vi in the ultrasound PC for more detail.
+ *
+ * The structure of the data is very specific. It is in a long array of word (2 byte) which consists (n_probe x n_sample)
+ * of data. It starts with array header (4 bytes) and data header (10 bytes). This class ensuring you get a right
+ * interpretation of the data.
+ *
  */
+
 class AmodeConnection : public QObject
 {
     Q_OBJECT

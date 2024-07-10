@@ -5,8 +5,10 @@
 #include <Eigen/Dense>
 
 /**
- * @brief AmodeDataManipulator is just a collection of function that will be used for manipulating A-mode data vector.
+ * @class AmodeDataManipulator
+ * @brief This class is just a collection of functions that will be used for manipulating A-mode data vector.
  */
+
 class AmodeDataManipulator
 {
 public:

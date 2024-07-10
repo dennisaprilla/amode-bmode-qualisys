@@ -1,6 +1,13 @@
 #ifndef ULTRASOUNDCONFIG_H
 #define ULTRASOUNDCONFIG_H
 
+/**
+ * @class UltrasoundConfig
+ * @brief A class just to store everything related to ultrasound configuration specification.
+ *
+ * I should probably call this class as Ultrasound Spesification. But whatever, the damage was done.
+ */
+
 class UltrasoundConfig
 {
 public:

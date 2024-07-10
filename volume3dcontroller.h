@@ -8,6 +8,22 @@
 
 #include "mhareader.h"
 
+/**
+ * @class Volume3DController
+ * @brief For handling 3D visualization of the 3D volume (essentially the bone surface).
+ *
+ * For the context. After the user collect the b-mode images and its transformation (stored in .mha file), user can
+ * reconstruct the volume (with the help of PlusToolkit). This class will handle the visualization of that volume.
+ * This class assume that the user already loaded the volume data (also was stored in another .mha file) and store in
+ * MHAReader class. The visualization that is used in this class is using 3DScatter, the bones will shown as a dots in
+ * 3D space, where its intensity is over a specified threshold.
+ *
+ * Note: Why we don't use a volume renderer, you might ask, instead of 3dscatter? We tried it. However, there is a "bug"
+ * in qt when rendering the volume simultaneously with another object (like the A-mode 3D signal). The render seems "confuse"
+ * which one is on top of each other. The visualization become very confusing, so that is why we use 3Dscatter here.
+ *
+ */
+
 class Volume3DController : public QObject
 {
     Q_OBJECT

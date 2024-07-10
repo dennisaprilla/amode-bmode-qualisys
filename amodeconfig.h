@@ -9,12 +9,30 @@
 #include <array>
 
 /**
- * @brief AmodeConfig class is used for reading the a-mode probe configurations that is saved in a table in csv format.
+ * @class AmodeConfig
+ * @brief For reading and storing a-mode configuration; also for writing and storing a-mode window.
+ *
+ * A-mode transducers comes with groups (holder). The group is defined in a configuration file (.csv)
+ * At some point you want to work with A-mode transducers but in group (for example visualizing 3d
+ * signals in a group at once). This class provides functions to work with groups.
+ *
+ * At some point, you also want to store a window interval for each A-mode transducer in the same way
+ * as your a-mode configuration file. This class also provide function to store the window interval
+ * and write it to another (window) configuration file (.csv).
+ *
  */
+
 class AmodeConfig {
 public:
 
-    // Define a struct to hold your data.
+    /**
+     * @struct Data
+     * @brief Represents the configuration of A-mode transducers.
+     *
+     * This struct holds some configuration data corresponds to how A-mode transducer arranged.
+     * The data includes the probe's number, probe probe's (index), probe probe's name, probe's
+     * local rotation and translation (relative to the holder's origin).
+     */
     struct Data {
         int number;
         int group;
@@ -23,7 +41,16 @@ public:
         std::vector<double> local_t;
     };
 
-    // Define a struct to hold our window data
+    /**
+     * @struct Data
+     * @brief Represents the interval window of A-mode transducers
+     *
+     * This struct holds some window specification of each A-mode transducer. This struct will be
+     * filled with this entire software. I put several same fields as AmodeConfig::Data struct, just
+     * for consistency (probe's number, group (index), and group name). Additional fields including
+     * isset (boolean that described if this particular probe had been set or not, useful for some
+     * part in the program), and the window specification (lower-, middle, and upper-bound).
+     */
     struct Window {
         int number;
         int group;
