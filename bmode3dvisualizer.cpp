@@ -139,7 +139,7 @@ void Bmode3DVisualizer::onImageReceived(const cv::Mat &image) {
 void Bmode3DVisualizer::onRigidBodyReceived(const QualisysTransformationManager &tmanager) {
     // here i just take one of the transformation instead of all
     // in real case, you should take every transformation, and do something with them
-    currentTransform = tmanager.getTransformationById("TB-M");
+    currentTransform = tmanager.getTransformationById("B_PROBE");
     rigidbodyReady = true;
     if (imageReady) {
         visualizeImage();

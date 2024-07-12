@@ -292,7 +292,7 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
             // ui->layout_Bmode3D->removeItem(ui->verticalSpacer_Bmode3D);
             ui->layout_Bmode2D3D_content->addWidget(myBmode3Dvisualizer);
             ui->layout_Bmode2D3D_content->setStretch(0,3);
-            ui->layout_Bmode2D3D_content->setStretch(2,7);            
+            ui->layout_Bmode2D3D_content->setStretch(2,7);
 
             // Change the flag
             isBmode2d3dFirstStream = false;
@@ -340,8 +340,8 @@ void MainWindow::slotConnect_Bmode2d3d()
 
     connect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
     connect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
-    connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
-    connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+    // connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
+    // connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
 }
 
 void MainWindow::slotDisconnect_Bmode2d3d()
@@ -350,8 +350,8 @@ void MainWindow::slotDisconnect_Bmode2d3d()
 
     disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
     disconnect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
-    disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
-    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+    // disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
+    // disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
 }
 
 

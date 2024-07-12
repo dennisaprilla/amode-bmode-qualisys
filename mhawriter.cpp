@@ -34,8 +34,10 @@ MHAWriter::MHAWriter(QObject *parent, BmodeConnection *bmodeConnection, Qualisys
 */
 
 void MHAWriter::onImageReceived(const cv::Mat &image) {
-    if (latestTransform) {
-        storeDataPair(image, *latestTransform);
+    // if there is already data from mocap let's store
+    // here i only check one of the data from mocap, they are coupled anyway, so..
+    if (latestTransform_probe) {
+        storeDataPair(image, *latestTransform_probe, *latestTransform_ref);
         resetData();
     } else {
         latestImage = image;
@@ -44,28 +46,32 @@ void MHAWriter::onImageReceived(const cv::Mat &image) {
 
 void MHAWriter::onRigidBodyReceived(const QualisysTransformationManager &tmanager) {
     if (latestImage) {
-        storeDataPair(*latestImage, tmanager.getTransformationById("TB-M"));
+        storeDataPair(*latestImage, tmanager.getTransformationById("B_PROBE"), tmanager.getTransformationById("B_REF"));
         resetData();
     } else {
-        latestTransform = tmanager.getTransformationById("TB-M");
+        latestTransform_probe = tmanager.getTransformationById("B_PROBE");
+        latestTransform_ref = tmanager.getTransformationById("B_REF");
     }
 }
 
-void MHAWriter::storeDataPair(const cv::Mat& image, const Eigen::Isometry3d& transform) {
+void MHAWriter::storeDataPair(const cv::Mat& image, const Eigen::Isometry3d& transform_probe, const Eigen::Isometry3d& transform_ref) {
     // make a complete copy of cv::Mat using copyTo() function, it is super necessary so that i am not referencing the streaming image
     cv::Mat imageCopy;
     image.copyTo(imageCopy);
     // make a copy of Eigen::Isometry3d, not like cv::Mat, assigning new object like this will not affect the original object
-    Eigen::Isometry3d transformCopy = transform;
+    Eigen::Isometry3d transformCopy_probe = transform_probe;
+    Eigen::Isometry3d transformCopy_ref   = transform_ref;
 
     allImages.push_back(imageCopy);
-    allTransforms.push_back(transformCopy);
+    allTransforms_probe.push_back(transformCopy_probe);
+    allTransforms_ref.push_back(transformCopy_ref);
     allTimestamps.push_back(timestamp.elapsed()/1000.0);
 }
 
 void MHAWriter::resetData() {
     latestImage.reset();
-    latestTransform.reset();
+    latestTransform_probe.reset();
+    latestTransform_ref.reset();
 }
 
 void MHAWriter::startRecord()
@@ -151,24 +157,45 @@ bool MHAWriter::writeHeader()
 bool MHAWriter::writeTransformations()
 {
     // Write the transformations
-    for (size_t i = 0; i < allTransforms.size(); ++i) {
-        bool isNaN = false;
-        const Eigen::Isometry3d& transform = allTransforms[i];
-        mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ProbeToTrackerTransform = ";
+    for (size_t i = 0; i < allTransforms_probe.size(); ++i) {
+
+        // 1) Write ProbeToTrackerDeviceTransform
+        bool isNaN_probe = false;
+        const Eigen::Isometry3d& transform_probe = allTransforms_probe[i];
+        mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ProbeToTrackerDeviceTransform = ";
         for (int row = 0; row < 4; ++row) {
             for (int col = 0; col < 4; ++col) {
-                mhaFile_ << transform.matrix()(row, col) << " ";
-                if(transform.matrix()(row, col)!=transform.matrix()(row, col)) isNaN=true;
+                mhaFile_ << transform_probe.matrix()(row, col) << " ";
+                if(transform_probe.matrix()(row, col)!=transform_probe.matrix()(row, col)) isNaN_probe=true;
             }
         }
         mhaFile_ << std::endl;
 
-        // if the transformation contains NaN, set TransformStatus to invalid
-        if (isNaN) mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ProbeToTrackerTransformStatus = " << "INVALID" << std::endl;
-        else mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ProbeToTrackerTransformStatus = " << "OK" << std::endl;
-        // print the timestamps
+        // 2) Write ProbeToTrackerDeviceTransformStatus
+        //    if the transformation contains NaN, set TransformStatus to invalid
+        if (isNaN_probe) mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ProbeToTrackerDeviceTransformStatus = " << "INVALID" << std::endl;
+        else mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ProbeToTrackerDeviceTransformStatus = " << "OK" << std::endl;
+
+        // 3) Write ReferenceToTrackerDeviceTransform
+        bool isNaN_ref = false;
+        const Eigen::Isometry3d& transform_ref = allTransforms_ref[i];
+        mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ReferenceToTrackerDeviceTransform = ";
+        for (int row = 0; row < 4; ++row) {
+            for (int col = 0; col < 4; ++col) {
+                mhaFile_ << transform_ref.matrix()(row, col) << " ";
+                if(transform_ref.matrix()(row, col)!=transform_ref.matrix()(row, col)) isNaN_ref=true;
+            }
+        }
+        mhaFile_ << std::endl;
+
+        // 4) Write ProbeToTrackerDeviceTransformStatus
+        //    if the transformation contains NaN, set TransformStatus to invalid
+        if (isNaN_ref) mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ReferenceToTrackerDeviceTransformStatus = " << "INVALID" << std::endl;
+        else mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ReferenceToTrackerDeviceTransformStatus = " << "OK" << std::endl;
+
+        // 5) Write the Timestamp
         mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_Timestamp = " << allTimestamps[i] << std::endl;
-        // i am assuming that the image always ok
+        // 6) Write the ImageStatus. I am assuming that the image always ok. Lol, hehe.
         mhaFile_ << "Seq_Frame" << std::setfill('0') << std::setw(4) << i << "_ImageStatus = " << "OK" << std::endl;
     }
 

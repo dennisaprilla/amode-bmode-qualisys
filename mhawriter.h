@@ -60,7 +60,7 @@ private:
     std::string getCurrentDateTime();
 
     // functions to handle pair of data soft-synchronization
-    void storeDataPair(const cv::Mat& image, const Eigen::Isometry3d& isometry);
+    void storeDataPair(const cv::Mat& image, const Eigen::Isometry3d& transform_probe, const Eigen::Isometry3d& transform_ref);
     void resetData();
 
     // variables for naming file
@@ -71,10 +71,13 @@ private:
     // variables for storing data
     bool isRecording;
     std::optional<cv::Mat> latestImage;
-    std::optional<Eigen::Isometry3d> latestTransform;
-    std::vector<cv::Mat> allImages;
-    std::vector<Eigen::Isometry3d> allTransforms;
-    std::vector<double> allTimestamps;
+    std::optional<Eigen::Isometry3d> latestTransform_probe;
+    std::optional<Eigen::Isometry3d> latestTransform_ref;
+
+    std::vector<cv::Mat>           allImages;
+    std::vector<Eigen::Isometry3d> allTransforms_probe;
+    std::vector<Eigen::Isometry3d> allTransforms_ref;
+    std::vector<double>            allTimestamps;
     QElapsedTimer timestamp;
 
     // BmodeConnection *bmodeConnection_;

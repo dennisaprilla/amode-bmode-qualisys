@@ -165,7 +165,6 @@ void QualisysConnection::receiveData() {
 
         // store the transformation matrix with the transformation manager
         tmanager.addTransformation(name_6DOF, T);
-
     }
 
     // std::cout << std::endl << std::flush;
