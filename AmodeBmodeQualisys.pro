@@ -47,7 +47,8 @@ FORMS += \
 
 INCLUDEPATH += \
     "C:/qualisys_cpp_sdk" \
-    "C:/eigen-3.4.0"
+    "C:/eigen-3.4.0" \
+    "C:/rapidxml-master"
 
 SOURCES += \
     "C:/qualisys_cpp_sdk/Markup.cpp" \

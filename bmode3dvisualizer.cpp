@@ -29,11 +29,146 @@
 #include <QPushButton>
 #include <QPainter>
 
+// library below is for loading an XML using RapidXML
+#include <QFile>
+#include <QTextStream>
+#include <iostream>
+#include "rapidxml.hpp"
+
+
+// This is temporary function
+std::vector<double> getImageToProbeTransformation(const QString& filename) {
+    std::vector<double> matrix;
+
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        std::cerr << "Failed to open file" << std::endl;
+        return {};
+    }
+
+    QTextStream in(&file);
+    QString content = in.readAll();
+    file.close();
+
+    // Convert QString to std::string once
+    std::string contentStr = content.toStdString();
+
+    // Create buffer without relying on c_str()
+    std::vector<char> buffer(contentStr.begin(), contentStr.end());
+
+    // Ensure null termination
+    buffer.push_back('\0');
+
+    rapidxml::xml_document<> doc;
+    try {
+        doc.parse<0>(&buffer[0]);
+    } catch (const rapidxml::parse_error& e) {
+        std::cerr << "XML Parse error: " << e.what() << std::endl;
+        return matrix;  // Return default transformation
+    }
+
+    rapidxml::xml_node<>* root_node = doc.first_node("PlusConfiguration");
+    if (root_node) {
+        rapidxml::xml_node<>* coord_def_node = root_node->first_node("CoordinateDefinitions");
+        if (coord_def_node) {
+            for (rapidxml::xml_node<>* transform_node = coord_def_node->first_node("Transform");
+                 transform_node;
+                 transform_node = transform_node->next_sibling("Transform")) {
+
+                rapidxml::xml_attribute<>* from_attr = transform_node->first_attribute("From");
+                rapidxml::xml_attribute<>* to_attr = transform_node->first_attribute("To");
+
+                if (from_attr && to_attr &&
+                    std::string(from_attr->value()) == "Image" &&
+                    std::string(to_attr->value()) == "Probe") {
+
+                    rapidxml::xml_attribute<>* matrix_attr = transform_node->first_attribute("Matrix");
+                    if (matrix_attr) {
+                        std::string matrix_str = matrix_attr->value();
+                        std::istringstream iss(matrix_str);
+                        double value;
+                        while (iss >> value) {
+                            matrix.push_back(value);
+                        }
+                        break;  // We found the matrix we're looking for, so we can stop searching
+                    }
+                }
+            }
+        }
+    }
+
+    return matrix;
+}
+
+void normalizeRotationMatrix(QMatrix3x3& calib_rotation)
+{
+    // Convert QMatrix3x3 to Eigen::Matrix3d
+    Eigen::Matrix3d eigenMatrix;
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            eigenMatrix(i, j) = calib_rotation(i, j);
+        }
+    }
+
+    // Perform Singular Value Decomposition
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(eigenMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+
+    // Construct the normalized rotation matrix
+    Eigen::Matrix3d normalizedMatrix = U * V.transpose();
+
+    // Ensure the determinant is 1 (proper rotation matrix)
+    if (normalizedMatrix.determinant() < 0) {
+        normalizedMatrix = -normalizedMatrix;
+    }
+
+    // Convert back to QMatrix3x3
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            calib_rotation(i, j) = normalizedMatrix(i, j);
+        }
+    }
+}
 
 Bmode3DVisualizer::Bmode3DVisualizer(QWidget *parent)
     : QWidget(parent)
 {
     initializeScene();
+
+    // Initialize probe base-transform. The probe model has its own pivot and initial orientation.
+    // It is not always necessarily align with the transformation that is provided by mocap capture
+    // For example, the mesh can be modeled upside down. This transformation is used for the
+    // initial transformation of the probe model.
+    probeBaseTransform = new Qt3DCore::QTransform();
+    probeBaseTransform->setScale(VIZ_SCALE); // i put scale 0.1 because the mesh dimension is in mm, i want it to be visualized in dm
+    probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(0.0f, -90.0f, 90.0f));
+
+    // get calibration matrix
+    std::vector<double> calib_matrix = getImageToProbeTransformation("D:\\bmodecalib\\PlusDeviceSet_fCal_Epiphan_NDIPolaris_UTwente_2024_20240530_124635.xml");
+    QMatrix3x3 calib_rotation = QMatrix3x3();
+    QVector3D calib_translation = QVector3D(0, 0, 0);
+    if (!calib_matrix.empty())
+    {
+        calib_rotation(0,0) = calib_matrix[0]; calib_rotation(0,1) = calib_matrix[1]; calib_rotation(0,2) = calib_matrix[2];
+        calib_rotation(1,0) = calib_matrix[4]; calib_rotation(1,1) = calib_matrix[5]; calib_rotation(1,2) = calib_matrix[6];
+        calib_rotation(2,0) = calib_matrix[8]; calib_rotation(2,1) = calib_matrix[9]; calib_rotation(2,2) = calib_matrix[10];
+        calib_translation = QVector3D(calib_matrix[3]*VIZ_SCALE, calib_matrix[7]*VIZ_SCALE, calib_matrix[11]*VIZ_SCALE);
+    }
+
+    normalizeRotationMatrix(calib_rotation);
+
+    // Similar to code above, this one if for the initialization of the image plane
+    planeBaseTransform = new Qt3DCore::QTransform();
+    // planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(-90.0f, 180.0f, 0.0f));
+    planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(-90.0f, 0.0f, 0.0f));
+    planeBaseTransform->setTranslation(QVector3D(0,0,0));
+
+    // Similar to code above, this one if for the initialization of the image plane
+    planeCalibTransform = new Qt3DCore::QTransform();
+    planeCalibTransform->setRotation(QQuaternion::fromRotationMatrix(calib_rotation));
+    planeCalibTransform->setTranslation(calib_translation);
+
 }
 
 /*
@@ -79,9 +214,9 @@ void Bmode3DVisualizer::initializeScene()
     cameraEntity->setUpVector(QVector3D(0, 1, 0));
     cameraEntity->setNearPlane(0.1f);
     cameraEntity->setFarPlane(1000.0f);
-    cameraEntity->setFieldOfView(60.0f);
+    cameraEntity->setFieldOfView(25.0f);
     Qt3DExtras::QOrbitCameraController *camController = new Qt3DExtras::QOrbitCameraController(rootEntity);
-    camController->setLinearSpeed(30.0);
+    camController->setLinearSpeed(10.0);
     camController->setCamera(cameraEntity);
 
     // Light Entity
@@ -159,11 +294,6 @@ void Bmode3DVisualizer::visualizeImage() {
         currentQTransform = new Qt3DCore::QTransform();
         currentQTransform->setMatrix(eigenToQMatrix(currentTransform));
 
-        // Creating Axis entity (to understand the transformation better in visualization)sss
-        axisImageEntity = new Qt3DCore::QEntity(rootEntity);
-        createAxisVector(axisImageEntity);
-        axisImageEntity->addComponent(currentQTransform);
-
         // Creating Mesh Entity for B-mode probe model in 3D space
         // 1) Probe Mesh
         probeMesh = new Qt3DRender::QMesh();
@@ -173,25 +303,28 @@ void Bmode3DVisualizer::visualizeImage() {
         probeMaterial->setDiffuse(QColor(Qt::white));
         // 3) Probe Transformation
         // 3.a) Probe initial Transformation
-        probeBaseTransform = new Qt3DCore::QTransform();
-        probeBaseTransform->setScale(0.1f); // i put scale 0.1 because the mesh dimension is in mm, i want it to be visualized in cm
-        probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(90.0f, 0.0f, 0.0f));
+        // probeBaseTransform = new Qt3DCore::QTransform();
+        // probeBaseTransform->setScale(0.1f); // i put scale 0.1 because the mesh dimension is in mm, i want it to be visualized in cm
+        // probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(90.0f, 0.0f, 0.0f));
         // 3.b) Probe current Transformation
         probeTransform = new Qt3DCore::QTransform();
-        probeTransform->setMatrix(eigenToQMatrix(currentTransform)*probeBaseTransform->matrix());
+        probeTransform->setMatrix(currentQTransform->matrix()*probeBaseTransform->matrix());
         // 4) Probe Entity
         probeEntity = new Qt3DCore::QEntity(rootEntity);
-        probeEntity->addComponent(probeMesh);
+        // probeEntity->addComponent(probeMesh);
         probeEntity->addComponent(probeMaterial);
         probeEntity->addComponent(probeTransform);
+
+        // Creating Axis entity (to understand the transformation better in visualization)sss
+        axisProbeEntity = new Qt3DCore::QEntity(rootEntity);
+        createAxisVector(axisProbeEntity);
+        axisProbeEntity->addComponent(currentQTransform);
 
         // Creating Plane Entity for B-mode image in 3D space
         // 1) Plane Mesh
         planeMesh = new Qt3DExtras::QPlaneMesh();
-        // planeMesh->setWidth(0.004444*currentImage.cols);
-        // planeMesh->setHeight(0.004444*currentImage.rows);
-        planeMesh->setWidth(0.1*(4.0/90.0)*currentImage.cols);  // i put scale 0.1 because pix2mm (4.0/90.0) is in mm, i want it to be visualized in cm
-        planeMesh->setHeight(0.1*(4.0/90.0)*currentImage.rows); // same here
+        planeMesh->setWidth(VIZ_SCALE*(4.0/90.0)*currentImage.cols);  // i put scale VIZ_SCALE because pix2mm (4.0/90.0) is in mm, i want it to be visualized in VIZ_SCALE
+        planeMesh->setHeight(VIZ_SCALE*(4.0/90.0)*currentImage.rows); // same here
         // 2) Plane Texture (it is a but workaround, i want texture from QImage instead of external image file)
         // 2.a) Create an instance of PaintedTextureImage and set the QImage
         paintedTextureImage = new PaintedTextureImage();
@@ -203,20 +336,27 @@ void Bmode3DVisualizer::visualizeImage() {
         planeTextureMaterial = new Qt3DExtras::QTextureMaterial();
         planeTextureMaterial->setTexture(planeTexture2D);
         // 3) Plane Transformation
-        // 3.a) Plane base Transformation
-        planeBaseTransform = new Qt3DCore::QTransform();
-        planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(0.0f, 0.0f, 0.0f));
-        planeBaseTransform->setTranslation(QVector3D(0.0f, 0.0f, 2.0f));
+        // 3.a) Plane base Transformation (additional translation)
+        planeBaseTransform->setTranslation(QVector3D(planeMesh->width()/2, planeMesh->height()/2, 0.0f));
         // 3.b) Plane current Transformation
         planeTransform = new Qt3DCore::QTransform();
-        planeTransform->setMatrix(currentQTransform->matrix()*planeBaseTransform->matrix());
+        // planeTransform->setMatrix(planeBaseTransform->matrix());
+        // planeTransform->setMatrix(planeCalibTransform->matrix()*planeBaseTransform->matrix());
+        planeTransform->setMatrix(currentQTransform->matrix()*planeCalibTransform->matrix()*planeBaseTransform->matrix());
+
+        // Creating Axis entity (to understand the transformation better in visualization)sss
+        axisImageEntity = new Qt3DCore::QEntity(rootEntity);
+        createAxisVector(axisImageEntity);
+        planeOriginTransform = new Qt3DCore::QTransform();
+        planeOriginTransform->setMatrix(currentQTransform->matrix()*planeCalibTransform->matrix());
+        axisImageEntity->addComponent(planeOriginTransform);
+
         // 4) Plane Entity
         // 4.a) The image plane itself
         imageEntity = new Qt3DCore::QEntity(rootEntity);
         imageEntity->addComponent(planeMesh);
-        imageEntity->addComponent(planeTextureMaterial);
         imageEntity->addComponent(planeTransform);
-
+        imageEntity->addComponent(planeTextureMaterial);
 
         firstData = false;
     }
@@ -231,12 +371,14 @@ void Bmode3DVisualizer::visualizeImage() {
         // Probe Transform
         probeTransform->setMatrix(currentQTransform->matrix()*probeBaseTransform->matrix());
 
+        // Plane Transform
+        planeOriginTransform->setMatrix(currentQTransform->matrix()*planeCalibTransform->matrix());
+        planeTransform->setMatrix(currentQTransform->matrix()*planeCalibTransform->matrix()*planeBaseTransform->matrix());
+
         // Plane texture, the pipeline following the above
         paintedTextureImage->setImage(qtImage);
         planeTexture2D->addTextureImage(paintedTextureImage);
         planeTextureMaterial->setTexture(planeTexture2D);
-        // Plane Transform
-        planeTransform->setMatrix(currentQTransform->matrix()*planeBaseTransform->matrix());
 
     }
 }
@@ -285,9 +427,10 @@ QMatrix4x4 Bmode3DVisualizer::eigenToQMatrix(const Eigen::Isometry3d &eigen_mat)
     Eigen::Matrix4f mat = eigen_mat.matrix().cast<float>();
 
     // I am using dummy data for now, so i need to adjust a little bit with the translation
+    // let's do it in centimeter
     QMatrix4x4 currentQMat = QMatrix4x4(mat.data()).transposed();
     QVector3D translation  = currentQMat.column(3).toVector3D();
-    currentQMat.setColumn(3, QVector4D(0.01*translation, 1.0f));
+    currentQMat.setColumn(3, QVector4D(VIZ_SCALE*translation, 1.0f));
     return currentQMat;
 
     // Transpose to match row-major order because Eigen uses column-major order by default,

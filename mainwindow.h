@@ -99,11 +99,12 @@ private:
     int downsample_nsample_;                    //!< The real length of the downsampled array
 
     bool isMHArecord            = true;         //!< Flag to inform whether we are ready for recording MHA or not
+    bool isBmode2dFirstStream   = true;         //!< Flag to inform whether we are ready for B-mode 2d image stream
     bool isBmode2d3dStream      = true;         //!< Flag to inform whether we are ready to stream B-mode 2d image and 3d visualize it or not
     bool isBmode2d3dFirstStream = true;         //!< Flag to inform whether it is the first time to stream B-mode 2d image and qualisys or not
     bool isAmodeStream          = true;         //!< Flag to inform whether we are ready to stream A-mode data or not
 
-
+    int bmode2dvisheight = 1;
 
 };
 #endif // MAINWINDOW_H

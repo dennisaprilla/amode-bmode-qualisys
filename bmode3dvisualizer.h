@@ -81,6 +81,7 @@ private:
     bool firstData      = true;
     Qt3DExtras::Qt3DWindow       *view;
     Qt3DCore::QEntity            *rootEntity;
+    const double VIZ_SCALE = 0.01; // visualization is in dm
 
     // Mesh for origin axis
     Qt3DCore::QEntity            *axisOriginEntity;
@@ -91,6 +92,8 @@ private:
     Qt3DCore::QEntity            *imageEntity;
     Qt3DExtras::QPlaneMesh       *planeMesh;
     Qt3DCore::QTransform         *planeTransform;
+    Qt3DCore::QTransform         *planeOriginTransform;
+    Qt3DCore::QTransform         *planeCalibTransform;
     Qt3DCore::QTransform         *planeBaseTransform;
 
     PaintedTextureImage          *paintedTextureImage;

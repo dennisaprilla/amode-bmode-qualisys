@@ -1,7 +1,8 @@
 #include "BmodeConnection.h"
 
 //roi(662, 0, 840, 900)
-BmodeConnection::BmodeConnection(QObject *parent) : QObject(parent), roi(0, 0, 320, 480), frameTimer(new QTimer(this)) {
+//roi(0, 0, 320, 480)
+BmodeConnection::BmodeConnection(QObject *parent) : QObject(parent), roi(662, 0, 840, 900), frameTimer(new QTimer(this)) {
     // Constructor
     connect(frameTimer, &QTimer::timeout, this, &BmodeConnection::processFrame);
 }
