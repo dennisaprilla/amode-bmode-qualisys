@@ -270,8 +270,6 @@ void Bmode3DVisualizer::onImageReceived(const cv::Mat &image) {
 }
 
 void Bmode3DVisualizer::onRigidBodyReceived(const QualisysTransformationManager &tmanager) {
-    // here i just take one of the transformation instead of all
-    // in real case, you should take every transformation, and do something with them
     currentTransform = tmanager.getTransformationById("B_PROBE");
     rigidbodyReady = true;
     if (imageReady) {
@@ -300,11 +298,6 @@ void Bmode3DVisualizer::visualizeImage() {
         probeMaterial = new Qt3DExtras::QPhongMaterial();
         probeMaterial->setDiffuse(QColor(Qt::white));
         // 3) Probe Transformation
-        // 3.a) Probe initial Transformation
-        // probeBaseTransform = new Qt3DCore::QTransform();
-        // probeBaseTransform->setScale(0.1f); // i put scale 0.1 because the mesh dimension is in mm, i want it to be visualized in cm
-        // probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(90.0f, 0.0f, 0.0f));
-        // 3.b) Probe current Transformation
         probeTransform = new Qt3DCore::QTransform();
         probeTransform->setMatrix(currentQTransform->matrix()*probeBaseTransform->matrix());
         // 4) Probe Entity
@@ -338,8 +331,6 @@ void Bmode3DVisualizer::visualizeImage() {
         planeBaseTransform->setTranslation(QVector3D(planeMesh->width()/2, planeMesh->height()/2, 0.0f));
         // 3.b) Plane current Transformation
         planeTransform = new Qt3DCore::QTransform();
-        // planeTransform->setMatrix(planeBaseTransform->matrix());
-        // planeTransform->setMatrix(planeCalibTransform->matrix()*planeBaseTransform->matrix());
         planeTransform->setMatrix(currentQTransform->matrix()*planeCalibTransform->matrix()*planeBaseTransform->matrix());
 
         // Creating Axis entity (to understand the transformation better in visualization)sss

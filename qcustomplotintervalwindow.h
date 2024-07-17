@@ -69,13 +69,13 @@ private:
     void clearAllElements();
 
 
-    std::array<QCPItemLine*, 3> verticalLines;          /**< Stores the vertical lines (QCPItemLine) for the interval window. */
-    std::array<QPointer<QCPItemText>, 3> xValueLabels;  /**< Stores the labels (text for x-positions of the lines) (QCPItemText) for the interval window. */
-    QCPItemRect *shadeRect;                             /**< Stores shading object (QCPItemRect) for the interval window. */
+    std::array<QCPItemLine*, 3> verticalLines;          //!< Stores the vertical lines (QCPItemLine) for the interval window.
+    std::array<QPointer<QCPItemText>, 3> xValueLabels;  //!< Stores the labels (text for x-positions of the lines) (QCPItemText) for the interval window.
+    QCPItemRect *shadeRect;                             //!< Stores shading object (QCPItemRect) for the interval window.
 
-    double lineSpacing = 0.1;       /**< Initial line spacing. */
-    double centerX = 0;             /**< Initial centerX. */
-    bool elementsVisible = false;   /**< Initial visibility of the line. */
+    double lineSpacing = 0.1;       //!< Initial line spacing.
+    double centerX = 0;             //!< Initial centerX.
+    bool elementsVisible = false;   //!< Initial visibility of the line.
 };
 
 #endif // QCUSTOMPLOTINTERVALWINDOW_H

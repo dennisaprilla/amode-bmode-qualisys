@@ -84,6 +84,11 @@ public:
      */
     void setTransformationID(std::string bmodeprobe_transformationID, std::string bmoderef_transformationID);
 
+    /**
+     * @brief GET the full path of the Sequence Image file
+     */
+    std::string getFullfilename();
+
 public slots:
 
     /**
@@ -128,26 +133,27 @@ private:
      */
     void resetData();
 
+
     // variables for naming file
-    std::string filename_;
-    MHAWriter::MHAHeader header_;
-    std::ofstream mhaFile_;
+    std::string fullfilename_;          //!< Stores the full path and file name of the sequence image (.mha) file.
+    MHAWriter::MHAHeader header_;       //!< Stores the necessary information related to the sequence image.
+    std::ofstream mhaFile_;             //!< Stream object to write the sequence image.
 
     // variables for storing data
-    bool isRecording;
-    std::optional<cv::Mat> latestImage;
-    std::optional<Eigen::Isometry3d> latestTransform_probe;
-    std::optional<Eigen::Isometry3d> latestTransform_ref;
+    bool isRecording;                                           //!< An indicator that whether we are recording or not.
+    std::optional<cv::Mat> latestImage;                         //!< The latest image comes from streaming. Using std::optional so it is optional that this variable is empty or not.
+    std::optional<Eigen::Isometry3d> latestTransform_probe;     //!< The latest probe transformation. Similar to latestImage.
+    std::optional<Eigen::Isometry3d> latestTransform_ref;       //!< The latest of reference transformation. Similar to latestTransform_probe.
 
-    std::vector<cv::Mat>           allImages;
-    std::vector<Eigen::Isometry3d> allTransforms_probe;
-    std::vector<Eigen::Isometry3d> allTransforms_ref;
-    std::vector<double>            allTimestamps;
-    QElapsedTimer timestamp;
+    std::vector<cv::Mat>           allImages;                   //!< Stores all the images had been streamed.
+    std::vector<Eigen::Isometry3d> allTransforms_probe;         //!< Stores all probe transformation had been streamed.
+    std::vector<Eigen::Isometry3d> allTransforms_ref;           //!< Stores all reference transformation had been stream. (Reference transformation is the marker from Calibration Phantom, somehow it is used by the volume reconstructor module from fCal)
+    std::vector<double>            allTimestamps;               //!< Stores all the timestamps of the data streamed.
+    QElapsedTimer timestamp;                                    //!< Stores the timestamp has been elapsed.
 
     // variables that is used to grab the necessary rigid bodies
-    std::string bmodeprobe_transformationID_ = "B_PROBE";
-    std::string bmoderef_transformationID_   = "B_REF";
+    std::string bmodeprobe_transformationID_ = "B_PROBE";       //!< Default indentifier for B-mode probe rigid body transformation from the Mocap system
+    std::string bmoderef_transformationID_   = "B_REF";         //!< Default indentifier for Reference rigid body transformation from the Mocap system
 
 signals:
 };

@@ -38,15 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
     amodePlot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     ui->gridLayout_amodeSignals->addWidget(amodePlot);
 
-    // // Initialize the QCustomPlot for A-mode signal, can only be done programatically
-    // ui->customPlot->setObjectName("amode_originalplot");
-    // ui->customPlot->addGraph();
-    // ui->customPlot->xAxis->setLabel("Depth (mm)");
-    // ui->customPlot->yAxis->setLabel("Amplitude");
-    // ui->customPlot->xAxis->setRange(0, us_dvector_downsampled_.coeff(us_dvector_downsampled_.size() - 1));
-    // ui->customPlot->yAxis->setRange(-500, 7500);
-    // ui->customPlot->replot();
-
     // Initalize scatter object, can also only be done programatically
     scatter = new Q3DScatter();
     scatter->setMinimumSize(QSize(2048, 2048));
@@ -66,7 +57,6 @@ MainWindow::MainWindow(QWidget *parent)
     scatter->axisY()->setSegmentCount(1);
     scatter->axisZ()->setSegmentCount(1);
     scatter->setAspectRatio(1.0);
-    // scatter->activeTheme()->setGridEnabled(false);
 
     // Assuming 'scatter' is a pointer to your Q3DScatter instance
     Q3DCamera *camera = scatter->scene()->activeCamera();
@@ -316,10 +306,7 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
 
             // adjust the layout
             ui->textEdit_qualisysLog->hide();
-            // ui->layout_Bmode3D->removeItem(ui->verticalSpacer_Bmode3D);
             ui->layout_Bmode2D3D_content->addWidget(myBmode3Dvisualizer, 1, 1);
-            // ui->layout_Bmode2D3D_content->setStretch(0,3);
-            // ui->layout_Bmode2D3D_content->setStretch(2,7);
 
             // Change the flag
             isBmode2d3dFirstStream = false;
@@ -417,7 +404,7 @@ void MainWindow::on_pushButton_mhaRecord_clicked()
     {
         // set the text of the button to stop, indicating the user that the same button is used for stopping
         ui->pushButton_mhaRecord->setText("Stop");
-        ui->pushButton_mhaRecord->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::MediaPlaybackStop));
+        ui->pushButton_mhaRecord->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::ProcessStop));
         // instantiate new mhawriter, with the file name from textfield
         myMHAWriter = new MHAWriter(nullptr, filepath, "SequenceRecording");
         myMHAWriter->setTransformationID("B_PROBE", "B_REF");
@@ -440,7 +427,11 @@ void MainWindow::on_pushButton_mhaRecord_clicked()
         // tell the mhawriter object to stop recording and start writing it to the file
         int recordstatus = myMHAWriter->stopRecord();
         if(recordstatus==1)
+        {
             QMessageBox::information(this, "Writing Successful", "Writing Image Sequence (.mha) file successfull.");
+            // if successful, let's write the full path to lineEdit_volumeRecording, make user's life easier
+            ui->lineEdit_volumeRecording->setText(QString::fromStdString(myMHAWriter->getFullfilename()));
+        }
         else if(recordstatus==-1)
             QMessageBox::critical(this, "Writing Error", "Error occurred writing Image Sequence (.mha) file: Error in writing header.");
         else if(recordstatus==-2)
@@ -463,17 +454,39 @@ void MainWindow::on_checkBox_autoReconstruct_stateChanged(int arg1)
 {
     if(arg1)
     {
+        // Check if this is the first click...
+        if (isAutoReconstructFirstClick)
+        {
+            // ...we want to give some message to the user for clarity of using this checkbox
+            QMessageBox::information(this, "Important Note", "When you enable the auto-reconstruction feature, the system will automatically use the Configuration File (.xml) that you have chosen for setting up the calibration. Additionally, it will select the Sequence Image File (.mha) by itself from the images you've recorded.");
+            isAutoReconstructFirstClick = false;
+        }
+
         // Check if the config and the recording path is already initialized in their respecting QLineEdits
-        if (ui->lineEdit_volumeConfig->text().isEmpty() ||
-            ui->lineEdit_volumeRecording->text().isEmpty() ||
-            ui->lineEdit_volumeOutput->text().isEmpty())
+        if (ui->lineEdit_volumeOutput->text().isEmpty())
         {
             // Inform the user that they need to fill all the necessary form
-            QMessageBox::warning(this, "Empty Form", "Please select the Config file (.xml), Sequence recording file (.mha), and the Output Path first, to allow auto reconstruction");
+            QMessageBox::warning(this, "Empty Form", "Please select the Output Path to allow auto reconstruction");
             // Make the checkbox unchecked again
             ui->checkBox_autoReconstruct->setCheckState(Qt::Unchecked);
             return;
         }
+
+        // disable buttons that might influence the process of auto-reconstruction
+        ui->pushButton_volumeBrowseConfig->setEnabled(false);
+        ui->pushButton_volumeBrowseRecording->setEnabled(false);
+        ui->pushButton_volumeBrowseOutput->setEnabled(false);
+        ui->pushButton_volumeReconstruct->setEnabled(false);
+        ui->pushButton_volumeLoad->setEnabled(false);
+    }
+    else
+    {
+        // enable back buttons that was disabled for auto-reconstruction process
+        ui->pushButton_volumeBrowseConfig->setEnabled(true);
+        ui->pushButton_volumeBrowseRecording->setEnabled(true);
+        ui->pushButton_volumeBrowseOutput->setEnabled(true);
+        ui->pushButton_volumeReconstruct->setEnabled(true);
+        ui->pushButton_volumeLoad->setEnabled(true);
     }
 }
 

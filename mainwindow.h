@@ -45,6 +45,7 @@ public slots:
 private slots:
     // void on_pushButton_startCamera_clicked();
     // void on_pushButton_qualisysConnect_clicked();
+    void on_pushButton_calibbrowse_clicked();
     void on_pushButton_bmode2d3d_clicked();
     void on_pushButton_mhaRecord_clicked();
 
@@ -63,10 +64,6 @@ private slots:
     void on_pushButton_volumeBrowseOutput_clicked();
     void on_checkBox_autoReconstruct_stateChanged(int arg1);
     void on_comboBox_volume3DSignalMode_currentIndexChanged(int index);
-
-
-
-    void on_pushButton_calibbrowse_clicked();
 
 private:
     void slotConnect_Bmode2d3d();
@@ -92,7 +89,7 @@ private:
 
     // for amode 2d plots
     QCustomPlotIntervalWindow *amodePlot;
-    std::vector<QCustomPlotIntervalWindow*> amodePlots;       //!< For handling amode 2d plots visualization
+    std::vector<QCustomPlotIntervalWindow*> amodePlots; //!< For handling amode 2d plots visualization
     Eigen::VectorXd us_dvector_;                //!< Stores the array of distances, used by plots
     Eigen::VectorXd us_dvector_downsampled_;    //!< Same as us_dvector_, but downsampled
     Eigen::VectorXd us_tvector_;                //!< Stores the array of time, used by plots
@@ -101,12 +98,15 @@ private:
     int downsample_nsample_;                    //!< The real length of the downsampled array
 
     bool isMHArecord            = true;         //!< Flag to inform whether we are ready for recording MHA or not
-    bool isBmode2dFirstStream   = true;         //!< Flag to inform whether we are ready for B-mode 2d image stream
+
     bool isBmode2d3dStream      = true;         //!< Flag to inform whether we are ready to stream B-mode 2d image and 3d visualize it or not
-    bool isBmode2d3dFirstStream = true;         //!< Flag to inform whether it is the first time to stream B-mode 2d image and qualisys or not
     bool isAmodeStream          = true;         //!< Flag to inform whether we are ready to stream A-mode data or not
 
-    int bmode2dvisheight = 1;
+    bool isBmode2dFirstStream   = true;         //!< Flag to inform whether it is the first data from B-mode 2d image stream comes (for image scaling (in the gui) purpose)
+    bool isBmode2d3dFirstStream = true;         //!< Flag to inform whether it is the first time to stream B-mode 2d image and qualisys or not (first one need initialization)
+    bool isAutoReconstructFirstClick = true;    //!< Flag to inform whether it is the first time auto reconstruct checkbox being clicked (for information about auto reconstruct)
+
+    int bmode2dvisheight = 1;                   //!< Stores the height of the layout where we draw B-mode 2d image (there is a bug that the height keep increasing)
 
 };
 #endif // MAINWINDOW_H

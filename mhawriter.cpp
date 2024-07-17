@@ -8,10 +8,10 @@ MHAWriter::MHAWriter(QObject *parent,  const std::string& filepath, const std::s
     : QObject{parent}, isRecording(false)
 {
     // open a file to write the .mha
-    filename_ = filepath + prefixname + "_" + getCurrentDateTime() + ".mha";
-    mhaFile_.open(filename_, std::ios::binary);
+    fullfilename_ = filepath + prefixname + "_" + getCurrentDateTime() + ".mha";
+    mhaFile_.open(fullfilename_, std::ios::binary);
     if (!mhaFile_.is_open()) {
-        throw std::runtime_error("Unable to open file: " + filename_);
+        throw std::runtime_error("Unable to open file: " + fullfilename_);
     }
 
     // start the timestamp
@@ -265,4 +265,9 @@ std::string MHAWriter::getCurrentDateTime()
     char buffer[20];
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", &local_tm);
     return std::string(buffer);
+}
+
+std::string MHAWriter::getFullfilename()
+{
+    return fullfilename_;
 }
