@@ -13,28 +13,9 @@
 #include <Eigen/Geometry>
 #include <opencv2/opencv.hpp>
 
-#include "bmodeconnection.h"
 #include "qualisysconnection.h"
 #include "qualisystransformationmanager.h"
 
-struct MHAHeader {
-    std::string      ObjectType;
-    int              NDims;
-    bool             BinaryData;
-    bool             BinaryDataByteOrderMSB;
-    bool             CompressedData;
-    std::vector<int> TransformMatrix;
-    std::vector<int> DimSize;
-    std::vector<int> Offset;
-    std::vector<int> CenterOfRotation;
-    std::string      AnatomicalOrientation;
-    std::vector<int> ElementSpacing;
-    std::string      ElementType;
-    std::string      UltrasoundImageOrientation;
-    std::string      UltrasoundImageType;
-    std::string      ElementDataFile;
-
-};
 
 /**
  * @class MHAWriter
@@ -56,6 +37,32 @@ class MHAWriter : public QObject
     Q_OBJECT
 
 public:
+
+    /**
+     * @struct MHAHeader
+     * @brief Represents the attribute list for the header of Sequence Image file
+     *
+     * The header of Sequence Image file consists of relevant information of the Sequence Image
+     * themselves. It is important for volume reconstruction.
+     */
+    struct MHAHeader {
+        std::string      ObjectType;
+        int              NDims;
+        bool             BinaryData;
+        bool             BinaryDataByteOrderMSB;
+        bool             CompressedData;
+        std::vector<int> TransformMatrix;
+        std::vector<int> DimSize;
+        std::vector<int> Offset;
+        std::vector<int> CenterOfRotation;
+        std::string      AnatomicalOrientation;
+        std::vector<int> ElementSpacing;
+        std::string      ElementType;
+        std::string      UltrasoundImageOrientation;
+        std::string      UltrasoundImageType;
+        std::string      ElementDataFile;
+
+    };
 
     /**
      * @brief Constructor function, it loads the csv file directly by calling loadData() function
@@ -123,7 +130,7 @@ private:
 
     // variables for naming file
     std::string filename_;
-    MHAHeader header_;
+    MHAWriter::MHAHeader header_;
     std::ofstream mhaFile_;
 
     // variables for storing data
