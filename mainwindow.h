@@ -66,6 +66,8 @@ private slots:
 
 
 
+    void on_pushButton_calibbrowse_clicked();
+
 private:
     void slotConnect_Bmode2d3d();
     void slotDisconnect_Bmode2d3d();

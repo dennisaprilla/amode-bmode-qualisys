@@ -65,7 +65,7 @@ public:
     };
 
     /**
-     * @brief Constructor function, it loads the csv file directly by calling loadData() function
+     * @brief Constructor function, requires the filepath where the Sequence File will be written and its prefix name
      */
     explicit MHAWriter(QObject *parent = nullptr, const std::string& filepath="D:\\", const std::string& prefixname="output");
 
@@ -87,12 +87,12 @@ public:
 public slots:
 
     /**
-     * @brief slot function, will be called when an image is received, needs to be connected to signal from bmodeconnection class
+     * @brief slot function, will be called when an image is received, needs to be connected to signal from BmodeConnection::imageProcessed
      */
     void onImageReceived(const cv::Mat &image);
 
     /**
-     * @brief slot function, will be called when transformations in a timestamp are received, needs to be connected to signal from qualisysconnection class
+     * @brief slot function, will be called when transformations in a timestamp are received, needs to be connected to signal from QualisysConnection::dataReceived class
      */
     void onRigidBodyReceived(const QualisysTransformationManager &tmanager);
 

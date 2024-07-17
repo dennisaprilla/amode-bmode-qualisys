@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
-     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0">
+     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="10,9">
       <property name="sizeConstraint">
        <enum>QLayout::SetFixedSize</enum>
       </property>
@@ -30,165 +30,6 @@
           <layout class="QVBoxLayout" name="layout_volume" stretch="0,1">
            <item>
             <layout class="QGridLayout" name="horizontalLayout_volumeMenu">
-             <item row="0" column="1">
-              <widget class="QLineEdit" name="lineEdit_volumeConfig">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="placeholderText">
-                <string>config.xml</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_volumeConfig">
-               <property name="text">
-                <string>Config</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="4">
-              <widget class="QLineEdit" name="lineEdit_volumeSource">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="placeholderText">
-                <string>volume.mha</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QPushButton" name="pushButton_volumeBrowseRecording">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset theme="document-open"/>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0" colspan="3">
-              <widget class="QPushButton" name="pushButton_volumeReconstruct">
-               <property name="text">
-                <string>Reconstruct Volume</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="5">
-              <widget class="QPushButton" name="pushButton_volumeLoad">
-               <property name="text">
-                <string>Load Volume</string>
-               </property>
-               <property name="icon">
-                <iconset theme="document-open"/>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLineEdit" name="lineEdit_volumeOutput">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>D:/</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QPushButton" name="pushButton_volumeBrowseOutput">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset theme="folder-open"/>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QLabel" name="label_volumeExisting">
-               <property name="text">
-                <string>Existing Volume</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="lineEdit_volumeRecording">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="placeholderText">
-                <string>recording.mha</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_volumeOutput">
-               <property name="text">
-                <string>Output</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QPushButton" name="pushButton_volumeBrowseConfig">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset theme="document-open"/>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_volumeRecording">
-               <property name="text">
-                <string>Recording</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="4" rowspan="2" colspan="2">
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
-               <item>
-                <widget class="QLabel" name="label_volumePixelValMin">
-                 <property name="text">
-                  <string>50</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QSlider" name="horizontalSlider_volumeThreshold">
-                 <property name="minimum">
-                  <number>50</number>
-                 </property>
-                 <property name="maximum">
-                  <number>200</number>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="tickPosition">
-                  <enum>QSlider::TicksBothSides</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_volumePixelValMax">
-                 <property name="text">
-                  <string>200</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item row="1" column="3" rowspan="2">
-              <widget class="QLabel" name="label_volumeThreshold">
-               <property name="text">
-                <string>Threshold</string>
-               </property>
-              </widget>
-             </item>
              <item row="3" column="4" colspan="2">
               <layout class="QHBoxLayout" name="horizontalLayout">
                <item>
@@ -265,6 +106,165 @@
                </item>
               </layout>
              </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEdit_volumeRecording">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="placeholderText">
+                <string>recording.mha</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_volumeOutput">
+               <property name="text">
+                <string>Output</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="4">
+              <widget class="QLineEdit" name="lineEdit_volumeSource">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="placeholderText">
+                <string>volume.mha</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="3">
+              <widget class="QPushButton" name="pushButton_volumeReconstruct">
+               <property name="text">
+                <string>Reconstruct Volume</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="lineEdit_volumeOutput">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>D:/</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="label_volumeExisting">
+               <property name="text">
+                <string>Existing Volume</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QPushButton" name="pushButton_volumeBrowseRecording">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset theme="document-open"/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="4" rowspan="2" colspan="2">
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLabel" name="label_volumePixelValMin">
+                 <property name="text">
+                  <string>50</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSlider" name="horizontalSlider_volumeThreshold">
+                 <property name="minimum">
+                  <number>50</number>
+                 </property>
+                 <property name="maximum">
+                  <number>200</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="tickPosition">
+                  <enum>QSlider::TicksBothSides</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_volumePixelValMax">
+                 <property name="text">
+                  <string>200</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="2" column="2">
+              <widget class="QPushButton" name="pushButton_volumeBrowseOutput">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset theme="folder-open"/>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="5">
+              <widget class="QPushButton" name="pushButton_volumeLoad">
+               <property name="text">
+                <string>Load Volume</string>
+               </property>
+               <property name="icon">
+                <iconset theme="document-open"/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3" rowspan="2">
+              <widget class="QLabel" name="label_volumeThreshold">
+               <property name="text">
+                <string>Threshold</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_volumeRecording">
+               <property name="text">
+                <string>Recording</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_volumeConfig">
+               <property name="text">
+                <string>Config</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="lineEdit_volumeConfig">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="placeholderText">
+                <string>config.xml</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QPushButton" name="pushButton_volumeBrowseConfig">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset theme="document-open"/>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
@@ -292,161 +292,57 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <layout class="QVBoxLayout" name="layout_Bmode2D" stretch="0,0">
+          <layout class="QVBoxLayout" name="layout_Bmode2D" stretch="0">
            <property name="sizeConstraint">
             <enum>QLayout::SetMaximumSize</enum>
            </property>
            <item>
-            <layout class="QHBoxLayout" name="layout_Bmode2D3D_menu" stretch="0,0,0,0,0,0,0,1,0,0,0,0">
-             <property name="sizeConstraint">
-              <enum>QLayout::SetFixedSize</enum>
-             </property>
-             <item>
-              <widget class="QLabel" name="label_4">
-               <property name="text">
-                <string>Camera</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="comboBox_camera">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="currentIndex">
-                <number>4</number>
-               </property>
+            <layout class="QGridLayout" name="layout_Bmode2D3D_content" columnstretch="2,5">
+             <item row="2" column="1">
+              <layout class="QHBoxLayout" name="layout_Bmode2D3D_record" stretch="0,0,0,0">
                <item>
-                <property name="text">
-                 <string>Camera 1</string>
-                </property>
+                <widget class="QLineEdit" name="lineEdit_mhaPath">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>D:/</string>
+                 </property>
+                 <property name="placeholderText">
+                  <string/>
+                 </property>
+                </widget>
                </item>
                <item>
-                <property name="text">
-                 <string>Camera 2</string>
-                </property>
+                <widget class="QPushButton" name="pushButton_mhaPath">
+                 <property name="text">
+                  <string>Select Path</string>
+                 </property>
+                 <property name="icon">
+                  <iconset theme="folder-open"/>
+                 </property>
+                </widget>
                </item>
                <item>
-                <property name="text">
-                 <string>Camera 3</string>
-                </property>
+                <widget class="QPushButton" name="pushButton_mhaRecord">
+                 <property name="text">
+                  <string>Record</string>
+                 </property>
+                 <property name="icon">
+                  <iconset theme="media-record"/>
+                 </property>
+                </widget>
                </item>
                <item>
-                <property name="text">
-                 <string>Camera 4</string>
-                </property>
+                <widget class="QCheckBox" name="checkBox_autoReconstruct">
+                 <property name="text">
+                  <string>Auto Reconstruct</string>
+                 </property>
+                </widget>
                </item>
-               <item>
-                <property name="text">
-                 <string>Camera 5</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Camera 6</string>
-                </property>
-               </item>
-              </widget>
+              </layout>
              </item>
-             <item>
-              <widget class="QLabel" name="label_qualisysIP">
-               <property name="text">
-                <string>IP</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit_qualisysIP">
-               <property name="placeholderText">
-                <string>127.0.0.1</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_qualisysPort">
-               <property name="text">
-                <string>Port</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit_qualisysPort">
-               <property name="placeholderText">
-                <string>22222</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_bmode2d3d">
-               <property name="text">
-                <string>Connect</string>
-               </property>
-               <property name="icon">
-                <iconset theme="network-wired"/>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit_mhaPath">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="text">
-                <string>D:/</string>
-               </property>
-               <property name="placeholderText">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_mhaPath">
-               <property name="text">
-                <string>Select Path</string>
-               </property>
-               <property name="icon">
-                <iconset theme="folder-open"/>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_mhaRecord">
-               <property name="text">
-                <string>Record</string>
-               </property>
-               <property name="icon">
-                <iconset theme="media-record"/>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="checkBox_autoReconstruct">
-               <property name="text">
-                <string>Auto Reconstruct</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="layout_Bmode2D3D_content" stretch="3,7">
-             <item>
+             <item row="1" column="0" rowspan="2">
               <widget class="QLabel" name="label_imageDisplay">
                <property name="autoFillBackground">
                 <bool>false</bool>
@@ -465,7 +361,7 @@
                </property>
               </widget>
              </item>
-             <item>
+             <item row="1" column="1">
               <widget class="QTextEdit" name="textEdit_qualisysLog">
                <property name="font">
                 <font>
@@ -476,6 +372,135 @@
                 <bool>true</bool>
                </property>
               </widget>
+             </item>
+             <item row="0" column="0">
+              <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,1,0">
+               <item>
+                <widget class="QLabel" name="label_camera">
+                 <property name="text">
+                  <string>Port</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboBox_camera">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="currentIndex">
+                  <number>4</number>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>Camera 1</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Camera 2</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Camera 3</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Camera 4</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Camera 5</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Camera 6</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="lineEdit_calibconfig">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="placeholderText">
+                  <string>calib_config.xml</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_calibbrowse">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="icon">
+                  <iconset theme="document-open"/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="0" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,0,0,0,1,0">
+               <item>
+                <widget class="QLabel" name="label_qualisysIP">
+                 <property name="text">
+                  <string>Motion Capture IP</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="lineEdit_qualisysIP">
+                 <property name="placeholderText">
+                  <string>127.0.0.1</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_qualisysPort">
+                 <property name="text">
+                  <string>Port</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="lineEdit_qualisysPort">
+                 <property name="placeholderText">
+                  <string>22222</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_bmode2d3d">
+                 <property name="text">
+                  <string>Connect</string>
+                 </property>
+                 <property name="icon">
+                  <iconset theme="network-wired"/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </item>

@@ -36,8 +36,46 @@
 #include "rapidxml.hpp"
 
 
-// This is temporary function
-std::vector<double> getImageToProbeTransformation(const QString& filename) {
+Bmode3DVisualizer::Bmode3DVisualizer(QWidget *parent, QString calibconfig_path)
+    : QWidget(parent)
+{
+    initializeScene();
+
+    // Initialize probe base-transform. The probe model has its own pivot and initial orientation.
+    // It is not always necessarily align with the transformation that is provided by mocap capture
+    // For example, the mesh can be modeled upside down. This transformation is used for the
+    // initial transformation of the probe model.
+    probeBaseTransform = new Qt3DCore::QTransform();
+    probeBaseTransform->setScale(VIZ_SCALE); // i put scale 0.1 because the mesh dimension is in mm, i want it to be visualized in dm
+    probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(0.0f, -90.0f, 90.0f));
+
+    // get calibration matrix
+    std::vector<double> calib_matrix = getImageToProbeTransformation(calibconfig_path);
+    QMatrix3x3 calib_rotation = QMatrix3x3();
+    QVector3D calib_translation = QVector3D(0, 0, 0);
+    if (!calib_matrix.empty())
+    {
+        calib_rotation(0,0) = calib_matrix[0]; calib_rotation(0,1) = calib_matrix[1]; calib_rotation(0,2) = calib_matrix[2];
+        calib_rotation(1,0) = calib_matrix[4]; calib_rotation(1,1) = calib_matrix[5]; calib_rotation(1,2) = calib_matrix[6];
+        calib_rotation(2,0) = calib_matrix[8]; calib_rotation(2,1) = calib_matrix[9]; calib_rotation(2,2) = calib_matrix[10];
+        calib_translation = QVector3D(calib_matrix[3]*VIZ_SCALE, calib_matrix[7]*VIZ_SCALE, calib_matrix[11]*VIZ_SCALE);
+    }
+    normalizeRotationMatrix(calib_rotation);
+
+    // Similar to code above, this one if for the initialization of the image plane
+    planeBaseTransform = new Qt3DCore::QTransform();
+    // planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(-90.0f, 180.0f, 0.0f));
+    planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(-90.0f, 0.0f, 0.0f));
+    planeBaseTransform->setTranslation(QVector3D(0,0,0));
+
+    // Similar to code above, this one if for the initialization of the image plane
+    planeCalibTransform = new Qt3DCore::QTransform();
+    planeCalibTransform->setRotation(QQuaternion::fromRotationMatrix(calib_rotation));
+    planeCalibTransform->setTranslation(calib_translation);
+
+}
+
+std::vector<double> Bmode3DVisualizer::getImageToProbeTransformation(const QString& filename) {
     std::vector<double> matrix;
 
     QFile file(filename);
@@ -100,7 +138,7 @@ std::vector<double> getImageToProbeTransformation(const QString& filename) {
     return matrix;
 }
 
-void normalizeRotationMatrix(QMatrix3x3& calib_rotation)
+void Bmode3DVisualizer::normalizeRotationMatrix(QMatrix3x3& calib_rotation)
 {
     // Convert QMatrix3x3 to Eigen::Matrix3d
     Eigen::Matrix3d eigenMatrix;
@@ -129,46 +167,6 @@ void normalizeRotationMatrix(QMatrix3x3& calib_rotation)
             calib_rotation(i, j) = normalizedMatrix(i, j);
         }
     }
-}
-
-Bmode3DVisualizer::Bmode3DVisualizer(QWidget *parent)
-    : QWidget(parent)
-{
-    initializeScene();
-
-    // Initialize probe base-transform. The probe model has its own pivot and initial orientation.
-    // It is not always necessarily align with the transformation that is provided by mocap capture
-    // For example, the mesh can be modeled upside down. This transformation is used for the
-    // initial transformation of the probe model.
-    probeBaseTransform = new Qt3DCore::QTransform();
-    probeBaseTransform->setScale(VIZ_SCALE); // i put scale 0.1 because the mesh dimension is in mm, i want it to be visualized in dm
-    probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(0.0f, -90.0f, 90.0f));
-
-    // get calibration matrix
-    std::vector<double> calib_matrix = getImageToProbeTransformation("D:\\amodebmodequalisys\\experiment_1\\PlusDeviceSet_fCal_Epiphan_NDIPolaris_UTwente_2024_20240530_124635.xml");
-    QMatrix3x3 calib_rotation = QMatrix3x3();
-    QVector3D calib_translation = QVector3D(0, 0, 0);
-    if (!calib_matrix.empty())
-    {
-        calib_rotation(0,0) = calib_matrix[0]; calib_rotation(0,1) = calib_matrix[1]; calib_rotation(0,2) = calib_matrix[2];
-        calib_rotation(1,0) = calib_matrix[4]; calib_rotation(1,1) = calib_matrix[5]; calib_rotation(1,2) = calib_matrix[6];
-        calib_rotation(2,0) = calib_matrix[8]; calib_rotation(2,1) = calib_matrix[9]; calib_rotation(2,2) = calib_matrix[10];
-        calib_translation = QVector3D(calib_matrix[3]*VIZ_SCALE, calib_matrix[7]*VIZ_SCALE, calib_matrix[11]*VIZ_SCALE);
-    }
-
-    normalizeRotationMatrix(calib_rotation);
-
-    // Similar to code above, this one if for the initialization of the image plane
-    planeBaseTransform = new Qt3DCore::QTransform();
-    // planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(-90.0f, 180.0f, 0.0f));
-    planeBaseTransform->setRotation(QQuaternion::fromEulerAngles(-90.0f, 0.0f, 0.0f));
-    planeBaseTransform->setTranslation(QVector3D(0,0,0));
-
-    // Similar to code above, this one if for the initialization of the image plane
-    planeCalibTransform = new Qt3DCore::QTransform();
-    planeCalibTransform->setRotation(QQuaternion::fromRotationMatrix(calib_rotation));
-    planeCalibTransform->setTranslation(calib_translation);
-
 }
 
 /*

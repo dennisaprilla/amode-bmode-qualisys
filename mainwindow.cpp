@@ -226,6 +226,20 @@ void MainWindow::updateQualisysText(const QualisysTransformationManager &tmanage
  * Somehting new
  * ***************************************************************************************** */
 
+void MainWindow::on_pushButton_calibbrowse_clicked()
+{
+    // Open a file dialog and get the selected file path
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open File"), "D:/", tr("Files (*.xml)"));
+
+    // Check if the user selected a file
+    if (!filePath.isEmpty()) {
+        // Set the file path in the QLineEdit
+        ui->lineEdit_calibconfig->setText(filePath);
+        // Set also automatically in the QLineEdit in the volume section
+        ui->lineEdit_volumeConfig->setText(filePath);
+    }
+}
+
 void MainWindow::on_pushButton_bmode2d3d_clicked()
 {
     if(isBmode2d3dStream)
@@ -236,6 +250,14 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
             /* **********************************************************************************
              * Form Check
              * ********************************************************************************** */
+
+            // check if the calibration config already set
+            if(ui->lineEdit_calibconfig->text().isEmpty())
+            {
+                // Inform the user about the invalid input
+                QMessageBox::warning(this, "Input Missing", "Please select the calibration configuration file.");
+                return;
+            }
 
             QString qualisys_ip = ui->lineEdit_qualisysIP->text();
             std::string qualisys_ipstr = qualisys_ip.toStdString();
@@ -288,16 +310,16 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
             // <!> I was thinking that probably i don't need to pass the myBmodeConnection and myQualisysConnection to the constructor
             // <!> Better to just connect the signal and the slot outside the constructor
             // myBmode3Dvisualizer = new Bmode3DVisualizer(nullptr, myBmodeConnection, myQualisysConnection);
-            myBmode3Dvisualizer = new Bmode3DVisualizer(nullptr);
+            myBmode3Dvisualizer = new Bmode3DVisualizer(nullptr, ui->lineEdit_calibconfig->text());
             connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
             connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
 
             // adjust the layout
             ui->textEdit_qualisysLog->hide();
             // ui->layout_Bmode3D->removeItem(ui->verticalSpacer_Bmode3D);
-            ui->layout_Bmode2D3D_content->addWidget(myBmode3Dvisualizer);
-            ui->layout_Bmode2D3D_content->setStretch(0,3);
-            ui->layout_Bmode2D3D_content->setStretch(2,7);
+            ui->layout_Bmode2D3D_content->addWidget(myBmode3Dvisualizer, 1, 1);
+            // ui->layout_Bmode2D3D_content->setStretch(0,3);
+            // ui->layout_Bmode2D3D_content->setStretch(2,7);
 
             // Change the flag
             isBmode2d3dFirstStream = false;
@@ -1038,4 +1060,7 @@ void MainWindow::on_checkBox_volumeShow3DSignal_clicked(bool checked)
         ui->comboBox_volume3DSignalMode->setEnabled(false);
     }
 }
+
+
+
 
