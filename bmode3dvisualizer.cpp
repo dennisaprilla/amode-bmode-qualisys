@@ -145,7 +145,7 @@ Bmode3DVisualizer::Bmode3DVisualizer(QWidget *parent)
     probeBaseTransform->setRotation(QQuaternion::fromEulerAngles(0.0f, -90.0f, 90.0f));
 
     // get calibration matrix
-    std::vector<double> calib_matrix = getImageToProbeTransformation("D:\\bmodecalib\\PlusDeviceSet_fCal_Epiphan_NDIPolaris_UTwente_2024_20240530_124635.xml");
+    std::vector<double> calib_matrix = getImageToProbeTransformation("D:\\amodebmodequalisys\\experiment_1\\PlusDeviceSet_fCal_Epiphan_NDIPolaris_UTwente_2024_20240530_124635.xml");
     QMatrix3x3 calib_rotation = QMatrix3x3();
     QVector3D calib_translation = QVector3D(0, 0, 0);
     if (!calib_matrix.empty())

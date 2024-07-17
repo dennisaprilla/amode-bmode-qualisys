@@ -1,6 +1,7 @@
 #include "mhawriter.h"
 #include <opencv2/imgcodecs.hpp>
 #include <QThread>
+#include <QMessageBox>
 
 
 MHAWriter::MHAWriter(QObject *parent,  const std::string& filepath, const std::string& prefixname)
@@ -17,21 +18,11 @@ MHAWriter::MHAWriter(QObject *parent,  const std::string& filepath, const std::s
     timestamp.start();
 }
 
-/*
-MHAWriter::MHAWriter(QObject *parent, BmodeConnection *bmodeConnection, QualisysConnection *qualisysConnection, const std::string& prefixname)
-    : QObject{parent}, isRecording(false), bmodeConnection_(bmodeConnection), qualisysConnection_(qualisysConnection)
+void MHAWriter::setTransformationID(std::string bmodeprobe_transformationID, std::string bmoderef_transformationID)
 {
-    // open a file to write the .mha
-    filename_ = "D:/" + prefixname + "_" + getCurrentDateTime() + ".mha";
-    mhaFile_.open(filename_, std::ios::binary);
-    if (!mhaFile_.is_open()) {
-        throw std::runtime_error("Unable to open file: " + filename_);
-    }
-
-    // start the timestamp
-    timestamp.start();
+    bmodeprobe_transformationID_ = bmodeprobe_transformationID;
+    bmoderef_transformationID_ = bmoderef_transformationID;
 }
-*/
 
 void MHAWriter::onImageReceived(const cv::Mat &image) {
     // if there is already data from mocap let's store
@@ -46,11 +37,11 @@ void MHAWriter::onImageReceived(const cv::Mat &image) {
 
 void MHAWriter::onRigidBodyReceived(const QualisysTransformationManager &tmanager) {
     if (latestImage) {
-        storeDataPair(*latestImage, tmanager.getTransformationById("B_PROBE"), tmanager.getTransformationById("B_REF"));
+        storeDataPair(*latestImage, tmanager.getTransformationById(bmodeprobe_transformationID_), tmanager.getTransformationById(bmoderef_transformationID_));
         resetData();
     } else {
-        latestTransform_probe = tmanager.getTransformationById("B_PROBE");
-        latestTransform_ref = tmanager.getTransformationById("B_REF");
+        latestTransform_probe = tmanager.getTransformationById(bmodeprobe_transformationID_);
+        latestTransform_ref = tmanager.getTransformationById(bmoderef_transformationID_);
     }
 }
 
@@ -77,15 +68,11 @@ void MHAWriter::resetData() {
 void MHAWriter::startRecord()
 {
     isRecording = true;
-    // connect(bmodeConnection_, &BmodeConnection::imageProcessed, this, &MHAWriter::onImageReceived);
-    // connect(qualisysConnection_, &QualisysConnection::dataReceived, this, &MHAWriter::onRigidBodyReceived);
 }
 
-bool MHAWriter::stopRecord()
+int MHAWriter::stopRecord()
 {
     isRecording = false;
-    // disconnect(bmodeConnection_, &BmodeConnection::imageProcessed, this, &MHAWriter::onImageReceived);
-    // disconnect(qualisysConnection_, &QualisysConnection::dataReceived, this, &MHAWriter::onRigidBodyReceived);
     resetData();
 
     if (!mhaFile_.is_open()) {
@@ -112,14 +99,14 @@ bool MHAWriter::stopRecord()
     header_.UltrasoundImageType        = "BRIGHTNESS";                          // Default value is BRIGHTNESS (for B-mode)
     header_.ElementDataFile            = "LOCAL";                               // Location of the image data. For *.mha files (must be LOCAL)
 
-    writeHeader();
-    writeTransformations();
-    writeImages();
+    if(!writeHeader()) return -1;
+    if(!writeTransformations()) return -2;
+    if(!writeImages()) return -3;
 
     // close the file to save
     mhaFile_.close();
 
-    return true;
+    return 1;
 }
 
 bool MHAWriter::writeHeader()
@@ -149,6 +136,15 @@ bool MHAWriter::writeHeader()
     mhaFile_ << "ElementType = "                << header_.ElementType << std::endl;
     mhaFile_ << "UltrasoundImageOrientation = " << header_.UltrasoundImageOrientation << std::endl;
     mhaFile_ << "UltrasoundImageType = "        << header_.UltrasoundImageType << std::endl;
+
+    // Check if any write operation failed
+    if (!mhaFile_)
+    {
+        // Handle the error
+        std::cerr << "Error occurred writing Image Sequence (.mha) file: Error in writing header." << std::endl;
+        // Perform necessary cleanup or error handling
+        return false; // Return a non-zero value to indicate failure
+    }
 
     return true;
 }
@@ -202,6 +198,15 @@ bool MHAWriter::writeTransformations()
     // Write this before the image
     mhaFile_ << "ElementDataFile = " << header_.ElementDataFile << std::endl;
 
+    // Check if any write operation failed
+    if (!mhaFile_)
+    {
+        // Handle the error
+        std::cerr << "Error occurred writing Image Sequence (.mha) file: Error in writing transformation." << std::endl;
+        // Perform necessary cleanup or error handling
+        return false; // Return a non-zero value to indicate failure
+    }
+
     return true;
 }
 
@@ -236,6 +241,15 @@ bool MHAWriter::writeImages()
     // std::vector<uchar> rawData(allImages[0].data, allImages[0].data + allImages[0].total() * allImages[0].elemSize());
     // mhaFile_.write(reinterpret_cast<const char*>(rawData.data()), rawData.size());
     // mhaFile_.flush();
+
+    // Check if any write operation failed
+    if (!mhaFile_)
+    {
+        // Handle the error
+        std::cerr << "Error occurred writing Image Sequence (.mha) file: Error in writing binary images." << std::endl;
+        // Perform necessary cleanup or error handling
+        return false; // Return a non-zero value to indicate failure
+    }
 
     return true;
 }

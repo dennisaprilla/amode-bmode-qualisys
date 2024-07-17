@@ -345,8 +345,8 @@ void MainWindow::slotConnect_Bmode2d3d()
 
     connect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
     connect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
-    // connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
-    // connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+    connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
+    connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
 }
 
 void MainWindow::slotDisconnect_Bmode2d3d()
@@ -355,8 +355,8 @@ void MainWindow::slotDisconnect_Bmode2d3d()
 
     disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
     disconnect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
-    // disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
-    // disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
+    disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
+    disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
 }
 
 
@@ -398,6 +398,7 @@ void MainWindow::on_pushButton_mhaRecord_clicked()
         ui->pushButton_mhaRecord->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::MediaPlaybackStop));
         // instantiate new mhawriter, with the file name from textfield
         myMHAWriter = new MHAWriter(nullptr, filepath, "SequenceRecording");
+        myMHAWriter->setTransformationID("B_PROBE", "B_REF");
         // start record (for the moment, inside this function is just a bool indicating that we are recording)
         myMHAWriter->startRecord();
         // connect the bmode and qualisys signal data to the mhawriter data receiving slot
@@ -409,11 +410,23 @@ void MainWindow::on_pushButton_mhaRecord_clicked()
         // set the text to record again, indicating we finished recording
         ui->pushButton_mhaRecord->setText("Record");
         ui->pushButton_mhaRecord->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::MediaRecord));
+
         // disconnect the bmode and qualisys data to mhawriter object
         disconnect(myBmodeConnection, &BmodeConnection::imageProcessed, myMHAWriter, &MHAWriter::onImageReceived);
         disconnect(myQualisysConnection, &QualisysConnection::dataReceived, myMHAWriter, &MHAWriter::onRigidBodyReceived);
+
         // tell the mhawriter object to stop recording and start writing it to the file
-        myMHAWriter->stopRecord();
+        int recordstatus = myMHAWriter->stopRecord();
+        if(recordstatus==1)
+            QMessageBox::information(this, "Writing Successful", "Writing Image Sequence (.mha) file successfull.");
+        else if(recordstatus==-1)
+            QMessageBox::critical(this, "Writing Error", "Error occurred writing Image Sequence (.mha) file: Error in writing header.");
+        else if(recordstatus==-2)
+            QMessageBox::critical(this, "Writing Error", "Error occurred writing Image Sequence (.mha) file: Error in writing transformations.");
+        else if(recordstatus==-3)
+            QMessageBox::critical(this, "Writing Error", "Error occurred writing Image Sequence (.mha) file: Error in writing binary images.");
+
+
         // delete the object
         delete myMHAWriter;
 
