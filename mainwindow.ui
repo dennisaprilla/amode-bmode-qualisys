@@ -309,14 +309,7 @@
             </widget>
            </item>
            <item row="0" column="0">
-            <layout class="QHBoxLayout" name="layout_Bmode2D_menu" stretch="0,0,1,0">
-             <item>
-              <widget class="QLabel" name="label_camera">
-               <property name="text">
-                <string>Port</string>
-               </property>
-              </widget>
-             </item>
+            <layout class="QHBoxLayout" name="layout_Bmode2D_menu" stretch="0,0,0">
              <item>
               <widget class="QComboBox" name="comboBox_camera">
                <property name="sizePolicy">
@@ -328,39 +321,12 @@
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;COM Port where the frame grabber for B-mode machine connected to your PC.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
-               <property name="currentIndex">
-                <number>4</number>
+               <property name="currentText">
+                <string/>
                </property>
-               <item>
-                <property name="text">
-                 <string>Camera 1</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Camera 2</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Camera 3</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Camera 4</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Camera 5</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Camera 6</string>
-                </property>
-               </item>
+               <property name="currentIndex">
+                <number>-1</number>
+               </property>
               </widget>
              </item>
              <item>
@@ -386,7 +352,14 @@
             </layout>
            </item>
            <item row="0" column="1">
-            <layout class="QHBoxLayout" name="layout_Bmode3D_menu" stretch="0,0,0,0,1,0">
+            <layout class="QHBoxLayout" name="layout_Bmode3D_menu" stretch="0,0,0,0,0,1,0">
+             <item>
+              <widget class="Line" name="line">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QLabel" name="label_qualisysIP">
                <property name="text">
@@ -547,19 +520,6 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_amodeConnect">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="text">
-                <string>Connect</string>
-               </property>
-               <property name="icon">
-                <iconset theme="network-wired"/>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QLineEdit" name="lineEdit_amodeConfig">
                <property name="enabled">
                 <bool>false</bool>
@@ -579,6 +539,19 @@
                </property>
                <property name="icon">
                 <iconset theme="document-open"/>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_amodeConnect">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>Connect</string>
+               </property>
+               <property name="icon">
+                <iconset theme="network-wired"/>
                </property>
               </widget>
              </item>

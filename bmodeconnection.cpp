@@ -1,14 +1,61 @@
 #include "BmodeConnection.h"
 
-//roi(662, 0, 840, 900)
-//roi(0, 0, 320, 480)
-BmodeConnection::BmodeConnection(QObject *parent) : QObject(parent), roi(0, 0, 320, 480), frameTimer(new QTimer(this)) {
-    // Constructor
+BmodeConnection::BmodeConnection(QObject *parent) : QObject(parent) {
+    // set the roi
+    // roi = cv::Rect(662, 0, 840, 900);
+    roi = cv::Rect(0, 0, 320, 480);
+    // declare a timer
+    frameTimer = new QTimer(this);
+
+    // connect the timer to processframe() function. If the camera is not open
+    // yet, this function basically does nothing.
     connect(frameTimer, &QTimer::timeout, this, &BmodeConnection::processFrame);
 }
 
+std::string BmodeConnection::getCameraInfo(int index) {
+    cv::VideoCapture camera(index);
+
+    if (!camera.isOpened()) {
+        return "Not available";
+    }
+
+    int width = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_WIDTH));
+    int height = static_cast<int>(camera.get(cv::CAP_PROP_FRAME_HEIGHT));
+    double fps = camera.get(cv::CAP_PROP_FPS);
+
+    std::stringstream ss;
+    ss << width << "x" << height;
+
+    // std::stringstream ss;
+    // ss << width << "x" << height << "|" << std::fixed << std::setprecision(1) << fps << "fps";
+
+    // cv::Mat frame;
+    // if (camera.read(frame)) {
+    //     ss << "|" << frame.channels() << "ch|" << (8 * frame.elemSize1()) << "bit";
+    // }
+
+    camera.release();
+    return ss.str();
+}
+
+std::vector<std::string> BmodeConnection::getAllCameraInfo()
+{
+    std::vector<std::string> allCameraInfo;
+    const int MAX_CAMERAS = 10; // Adjust this value based on your system
+
+    for (int i = 0; i < MAX_CAMERAS; ++i) {
+        std::string cameraInfo = getCameraInfo(i);
+        if (cameraInfo != "Not available") {
+            std::stringstream ss;
+            ss << "Camera " << i << ": " << cameraInfo;
+            allCameraInfo.push_back(ss.str());
+        }
+    }
+
+    return allCameraInfo;
+}
+
 BmodeConnection::~BmodeConnection() {
-    // Destructor
     stopImageStream();
     closeCamera();
 }

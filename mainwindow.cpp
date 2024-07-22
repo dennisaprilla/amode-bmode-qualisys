@@ -69,6 +69,19 @@ MainWindow::MainWindow(QWidget *parent)
     containerScatter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     ui->layout_volume->removeItem(ui->verticalSpacer_volume);
     ui->layout_volume->addWidget(containerScatter);
+
+    // I put the initialization of myBmodeConnection here. It is quite different than
+    // the other connection objects. That is okay, because BmodeConnection basically
+    // just opening a camera, so it happen locally.
+    // Other reason is that i want to list all of the port available. I was planning to
+    // list the name of the port, but apparently it is difficult as they are deep in
+    // Microsoft media API. So i just give info about the resolution.
+    myBmodeConnection = new BmodeConnection();
+    std::vector<std::string> allCameraInfo = myBmodeConnection->getAllCameraInfo();
+    for(const std::string &str : allCameraInfo) {
+        ui->comboBox_camera->addItem(QString::fromStdString(str));
+    }
+
 }
 
 MainWindow::~MainWindow()
@@ -277,7 +290,8 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
              * B-mode Image Stream
              * ********************************************************************************** */
 
-            myBmodeConnection = new BmodeConnection();
+            // myBmodeConnection = new BmodeConnection();
+            // std::vector<std::string> allCameraInfo = myBmodeConnection->getAllCameraInfo();
             // Connect the imageProcessed signal to the displayImage slot
             connect(myBmodeConnection, &BmodeConnection::imageProcessed, this, &MainWindow::displayImage);
 
@@ -304,9 +318,23 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
             connect(myBmodeConnection, &BmodeConnection::imageProcessed, myBmode3Dvisualizer, &Bmode3DVisualizer::onImageReceived);
             connect(myQualisysConnection, &QualisysConnection::dataReceived, myBmode3Dvisualizer, &Bmode3DVisualizer::onRigidBodyReceived);
 
+            QFrame* borderFrame = new QFrame(this);
+            borderFrame->setFrameStyle(QFrame::Box | QFrame::Plain);
+            borderFrame->setLineWidth(1);
+
+            // Set the background color to black
+            QPalette pal = borderFrame->palette();
+            pal.setColor(QPalette::Window, Qt::black);
+            borderFrame->setAutoFillBackground(true);
+            borderFrame->setPalette(pal);
+
+            QVBoxLayout* frameLayout = new QVBoxLayout(borderFrame);
+            frameLayout->setContentsMargins(0, 0, 0, 0);
+            frameLayout->addWidget(myBmode3Dvisualizer);
+
             // adjust the layout
             ui->textEdit_qualisysLog->hide();
-            ui->layout_Bmode2D3D_content->addWidget(myBmode3Dvisualizer, 1, 1);
+            ui->layout_Bmode2D3D_content->addWidget(borderFrame, 1, 1);
 
             // Change the flag
             isBmode2d3dFirstStream = false;

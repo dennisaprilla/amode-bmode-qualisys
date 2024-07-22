@@ -31,6 +31,15 @@ public:
      */
     ~BmodeConnection();
 
+    /**
+     * @brief GET the camera information given the index of the camera port
+     */
+    std::string getCameraInfo(int index);
+
+    /**
+     * @brief GET all of the camera information, with n=MAX_CAMERAS
+     */
+    std::vector<std::string> getAllCameraInfo();
 
     /**
      * @brief Opening the camera port
@@ -68,6 +77,8 @@ private:
     cv::VideoCapture camera;    //!< Stores the camera object
     cv::Mat processedImage;     //!< Stores the image data
     cv::Rect roi;               //!< A region of interest (cv::Rect object) which defines the cropping of the B-mode screen
+
+    const int MAX_CAMERAS = 10; //!< The maximum number of camera that can be listed
 
     QTimer *frameTimer;         //!< A timer, in which we will check the arriving image.
 };
