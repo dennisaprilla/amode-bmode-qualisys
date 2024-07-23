@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 #include "volumeamodecontroller.h"
 #include "amodedatamanipulator.h"
@@ -147,10 +148,10 @@ void VolumeAmodeController::setSignalDisplayMode(int mode)
     }
 }
 
-// void VolumeAmodeController::setAmodeGroupData(std::vector<AmodeConfig::Data> amodegroupdata)
-// {
-//     amodegroupdata_ = amodegroupdata;
-// }
+void VolumeAmodeController::setActiveHolder(std::string T_id)
+{
+    transformation_id = T_id;
+}
 
 void VolumeAmodeController::newObject(std::string path, std::string name)
 {
@@ -234,8 +235,22 @@ void VolumeAmodeController::onAmodeSignalReceived(const std::vector<uint16_t> &u
 
 void VolumeAmodeController::onRigidBodyReceived(const QualisysTransformationManager &tmanager)
 {
-    // temporary code, i should get the transformation based on the group amodegroupdata_->at(0).groupname
-    currentT_holder_camera = tmanager.getTransformationById("TB-M");
+    if(transformation_id.empty())
+    {
+        std::cerr << "Tranformation id is empty, please use initialize it using setActiveHolder()" << std::endl;
+        return;
+    }
+
+    try
+    {
+        // temporary code, i should get the transformation based on the group amodegroupdata_->at(0).groupname
+        currentT_holder_camera = tmanager.getTransformationById(transformation_id);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "An exception occurred: " << e.what() << std::endl;
+        return;
+    }
 
     // set the flag to be true...
     rigidbodyReady = true;

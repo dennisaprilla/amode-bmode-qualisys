@@ -1074,6 +1074,7 @@ void MainWindow::on_checkBox_volumeShow3DSignal_clicked(bool checked)
         // because amode_group here declared locally, so the reference will be gone outside of this scope.
         myVolumeAmodeController = new VolumeAmodeController(nullptr, scatter, amode_group);
         myVolumeAmodeController->setSignalDisplayMode(ui->comboBox_volume3DSignalMode->currentIndex());
+        myVolumeAmodeController->setActiveHolder(ui->comboBox_amodeNumber->currentText().toStdString());
 
         // connect necessary slots
         connect(myQualisysConnection, &QualisysConnection::dataReceived, myVolumeAmodeController, &VolumeAmodeController::onRigidBodyReceived);

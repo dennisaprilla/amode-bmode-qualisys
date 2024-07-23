@@ -66,6 +66,16 @@ public:
      */
     void updateTransformations(Eigen::Isometry3d T);
 
+    /**
+     * @brief SET the active ultrasound holder being visualized.
+     *
+     * The software can only visualize 3D signal from one ultrasound holder at a time. So the user need
+     * to specify which ultrasound holder needs to be visualizied so that this class will select the
+     * corresponding transformation.
+     *
+     */
+    void setActiveHolder(std::string T_id);
+
 public slots:
 
     /**
@@ -129,6 +139,7 @@ private:
     // variable that handle the display of 3d signal
     int n_signaldisplay = 1;                                    //!< controls the visualization of the 3d signal. See setSignalDisplayMode() description for detail.
     std::vector<Eigen::Matrix4d> rotation_signaldisplay;        //!< controls the visualization of the 3d signal.
+    std::string transformation_id = "";                         //!< The name of the current holder being visualized (relates to its transformation).
 
 signals:
 };

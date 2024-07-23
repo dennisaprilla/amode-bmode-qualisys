@@ -3,7 +3,7 @@
 
 void QualisysTransformationManager::addTransformation(const std::string& id, const Eigen::Isometry3d& transform) {
     if (idToTransformMap.find(id) != idToTransformMap.end()) {
-        throw std::runtime_error("ID already exists");
+        throw std::runtime_error("QualisysTransformationManager: ID already exists");
     }
     idToTransformMap[id] = transform;
 }
@@ -13,7 +13,7 @@ Eigen::Isometry3d QualisysTransformationManager::getTransformationById(const std
     if (it != idToTransformMap.end()) {
         return it->second;
     } else {
-        throw std::runtime_error("Transformation ID not found");
+        throw std::runtime_error("QualisysTransformationManager: Transformation ID not found");
     }
 }
 
