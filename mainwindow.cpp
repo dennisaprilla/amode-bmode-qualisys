@@ -308,7 +308,8 @@ void MainWindow::on_pushButton_bmode2d3d_clicked()
              * ********************************************************************************** */
 
             myQualisysConnection = new QualisysConnection(nullptr, qualisys_ipstr, qualisys_portushort);
-            connect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
+            myQualisysConnection->startStreaming();
+            // connect(myQualisysConnection, &QualisysConnection::dataReceived, this, &MainWindow::updateQualisysText);
 
             // Only intantiate Bmode3DVisualizer after myQualisysConnection is instantiated (and connected)
             // <!> I was thinking that probably i don't need to pass the myBmodeConnection and myQualisysConnection to the constructor

@@ -1,6 +1,5 @@
 #include "qualisysconnection.h"
 #include <iostream>
-#include <iomanip>
 
 QualisysConnection::QualisysConnection(QObject *parent, std::string ip, unsigned short port)
     : QObject{parent}, ip_{ip}, port_{port}
@@ -9,19 +8,26 @@ QualisysConnection::QualisysConnection(QObject *parent, std::string ip, unsigned
     if(!this->readMarkerSettings()) return;
     if(!this->startStreamFrames()) return;
 
-    // Setup timer for frame updates
-    timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &QualisysConnection::receiveData);
-    // start the timer
-    timer->start(30);
+    // // Setup timer for frame updates
+    // timer = new QTimer(this);
+    // connect(timer, &QTimer::timeout, this, &QualisysConnection::receiveData);
+    // // start the timer
+    // timer->start(30);
+
+    // connect the workerthread object
+    moveToThread(&m_workerThread);
+    connect(&m_workerThread, &QThread::started, this, &QualisysConnection::streamData);
 }
 
 QualisysConnection::~QualisysConnection()
 {
-    if (!poRTProtocol_.Connected())
-    {
-        return;
-    }
+    // stop streaming and tell the worker to quit
+    stopStreaming();
+    m_workerThread.quit();
+    m_workerThread.wait();
+
+    // disconnect the RTProtocol
+    if (!poRTProtocol_.Connected()) return;
     poRTProtocol_.StopCapture();
     poRTProtocol_.Disconnect();
 }
@@ -172,6 +178,103 @@ void QualisysConnection::receiveData() {
     // Once the task is finished, emit the signal
     emit dataReceived(tmanager);
 }
+
+void QualisysConnection::startStreaming()
+{
+    QMutexLocker locker(&m_mutex);
+    if (!m_isRunning) {
+        m_isRunning = true;
+        m_workerThread.start();
+    }
+}
+
+void QualisysConnection::stopStreaming()
+{
+    QMutexLocker locker(&m_mutex);
+    m_isRunning = false;
+    m_condition.wakeOne();
+}
+
+void QualisysConnection::streamData()
+{
+    while (true)
+    {
+        // create new scope for QMutexLocker Object
+        {
+            QMutexLocker locker(&m_mutex);
+            while (!m_isRunning) {
+                m_condition.wait(&m_mutex);
+            }
+            if (!m_isRunning) {
+                break;
+            }
+        }
+
+        // variable to capture packettype (error/packetdata/end)
+        CRTPacket::EPacketType ePacketType;
+
+        // check if receiving data is a success
+        if (poRTProtocol_.Receive(ePacketType, true) != CNetwork::ResponseType::success)
+        {
+            return;
+        }
+
+        // check if packet type is packet data
+        if (ePacketType != CRTPacket::PacketData)
+        {
+            return;
+        }
+
+        // get a packet
+        CRTPacket* rtPacket = poRTProtocol_.GetRTPacket();
+
+        // variable for 6DOF value (translation and rotation)
+        float tmp_tX, tmp_tY, tmp_tZ;
+        float tmp_R[9];
+
+        // clear the transformation manager
+        tmanager.clearTransformations();
+
+        // loop for all rigid body detected
+        for (unsigned int i = 0; i < rtPacket->Get6DOFBodyCount(); i++)
+        {
+            // get the rigid body values
+            if(!rtPacket->Get6DOFBody(i, tmp_tX, tmp_tY, tmp_tZ, tmp_R))
+            {
+                return;
+            }
+
+            // do something with the values
+            const char* name_6DOF = poRTProtocol_.Get6DOFBodyName(i);
+            std::string str(name_6DOF);
+
+            // Create the Eigen objects for rotation and translation
+            Eigen::Matrix3d R;
+            Eigen::Vector3d t;
+
+            // Copy the data from your arrays to the Eigen objects
+            R << tmp_R[0], tmp_R[1], tmp_R[2],
+                tmp_R[3], tmp_R[4], tmp_R[5],
+                tmp_R[6], tmp_R[7], tmp_R[8];
+            t << tmp_tX, tmp_tY, tmp_tZ;
+
+            // Create an Isometry3d object and set its rotation and translation components
+            Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+            T.linear() = R;
+            T.translation() = t;
+
+            // store the transformation matrix with the transformation manager
+            tmanager.addTransformation(name_6DOF, T);
+        }
+
+        // Once the task is finished, emit the signal
+        emit dataReceived(tmanager);
+
+        // Add a small delay to prevent excessive CPU usage
+        QThread::msleep(1);
+    }
+}
+
 
 QualisysTransformationManager QualisysConnection::getTManager(){
     return tmanager;

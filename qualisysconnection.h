@@ -15,6 +15,9 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QThread>
+#include <QMutex>
+#include <QWaitCondition>
 
 /**
  * @class QualisysConnection
@@ -64,6 +67,16 @@ public:
      */
     QualisysTransformationManager getTManager();
 
+    /**
+     * @brief Start qualisys streaming with QThread
+     */
+    void startStreaming();
+
+    /**
+     * @brief Stop qualisys streaming with QThread
+     */
+    void stopStreaming();
+
 protected:
     /**
      * @brief Initializing connection to Qualisys, called in constructor.
@@ -87,8 +100,18 @@ protected:
     */
     int startStreamFrames();
 
+
 private slots:
-    void receiveData(); // Slot with a parameter
+
+    /**
+     * @brief receive data from qualisys, called by QTimer
+     */
+    void receiveData();
+
+    /**
+     * @brief stream data from qualisys, called by QThread
+     */
+    void streamData();
 
 private:
     CRTProtocol poRTProtocol_;
@@ -108,8 +131,13 @@ private:
     std::vector<std::string> rigidbodyName_;    //!< Contains list of rigidbody names.
     std::vector<double> rigidbodyData_;         //!< Contains value of rigidbodies.
     QualisysTransformationManager tmanager;     //!< manage the rigid body transformation tracked by qualisys
-
     QTimer *timer;                              //!< A timer, in which we check the data from Qualisys
+
+    // variables that handles multithreading for streaming qualisys data
+    QThread m_workerThread;                     //!< The worker thread to run streaming data from qualisys function
+    QMutex m_mutex;                             //!< Mutex variable that keep m_isRunning variable to be accessed by one thread at a time
+    QWaitCondition m_condition;                 //!< Allows thread to sleep when idle and wake up on demand
+    bool m_isRunning = false;                   //!< A flag that tells that the thread is running or not
 
 signals:
     /**

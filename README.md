@@ -1,6 +1,8 @@
 ﻿# A-mode Ultrasound Navigation Software
 An A-mode ultrasound (US) + Motion capture -based skeletal kinematic estimation is being developed here in University of Twente. The system used A-mode ultrasound, which is attached to subject's leg, to estimate the distance between skin and the bone surface. At the same time, the USwere tracked by an optical tracking syste, such that the position and the orientation of the sensors can be estimated. Ultimately, bone surface points can be recovered in 3D space, providing a sparse (but a small number) point cloud data which represents the position and the orientation of the bone at a certain timestamp.
+
 Problem arises when the A-mode US were used for detecting the bone surface. A-mode US only provides 1D signal and the bone surface is represented as a disturbance (refered as "peak") in the signal, that is essentially an echo from the bone surface to the skin. However, bone surface is not the only one that reflecting the ultrasound, another layers of soft-tissues also reflects the US. The bone peak and soft-tissue peaks are practically indistinguishable. Hence, some of the times, we detect an incorrect bone peak, which ultimately leads to inaccurate kinematic estimation.
+
 This is a software that can be used by the user to navigate A-mode ultrasound such that its direction is pointing towards the bone, and such that the signal can be represented in 3D. Therfore, allowing the user to select which peaks wihtin the signal that is the true bone peak.
 
 ## How Does It Works (in a nutshell)
