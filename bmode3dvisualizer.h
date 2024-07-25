@@ -120,6 +120,15 @@ private:
     QMatrix4x4 eigenToQMatrix(const Eigen::Isometry3d &eigen_mat);
 
     /**
+     * @brief [Deprecated] Swap rotation order (and rotation hand-rule) using quaternion without involving euler angles
+     *
+     * This function is my attempt to swap rotation order and rotation hand-rule, similar to the current working code
+     * inside eigenToQMatrix() function but in quaternion without involving euler angles conversion. It was because
+     * I afraid that gimbal lock will screw the visualization.
+     */
+    Eigen::Quaterniond swapQuaternionOrderXYZtoZYX(const Eigen::Quaterniond& q, bool invert = false);
+
+    /**
      * @brief Function to create arrow object, used by createAxisVector() to make the basis vector in 3d scene.
      */
     void createArrow(Qt3DCore::QEntity* rootEntity, const QColor& color, const QVector3D& rotation);

@@ -214,7 +214,7 @@ void Bmode3DVisualizer::initializeScene()
     cameraEntity->setFarPlane(1000.0f);
     cameraEntity->setFieldOfView(25.0f);
     Qt3DExtras::QOrbitCameraController *camController = new Qt3DExtras::QOrbitCameraController(rootEntity);
-    camController->setLinearSpeed(10.0);
+    camController->setLinearSpeed(20.0);
     camController->setCamera(cameraEntity);
 
     // Light Entity
@@ -412,19 +412,105 @@ QImage Bmode3DVisualizer::cvMatToQImage(const cv::Mat &mat) {
 // Function to convert Eigen::Isometry3d to QMatrix4x4
 QMatrix4x4 Bmode3DVisualizer::eigenToQMatrix(const Eigen::Isometry3d &eigen_mat) {
 
+    // These process below is the adjustment of the coordinate system. This is needed
+    // because Qualisys has different rules of 3D visualization compared Qt3DCore:
+    // a) Qualisys has a right hand rule rotation, Qt3Dcore left hand rule rotation
+    // b) Qualisys has XYZ order of rotation, Qt3Dcore has ZYX order of rotation.
+
+    // 1) Transformation from qualisys has XYZ order, so let's decompose it first in XYZ manner
+    Eigen::Vector3d euler_angles = eigen_mat.rotation().eulerAngles(0, 1, 2);
+    // Eigen::Vector3d euler_tmp = euler_angles * (180.0 / M_PI);
+    // std::cout << "Euler angles: " << euler_tmp.transpose() << std::endl;
+
+    // 2) Transformation from qualisys has different hand rule, let's negate them
+    euler_angles = euler_angles * -1;
+
+    // 3) Transformation in Qt has ZYX order, so let's combine them in ZYX manner
+    Eigen::Matrix3d rotationMatrix;
+    rotationMatrix =
+        Eigen::AngleAxisd(euler_angles(2), Eigen::Vector3d::UnitZ())
+        * Eigen::AngleAxisd(euler_angles(1), Eigen::Vector3d::UnitY())
+        * Eigen::AngleAxisd(euler_angles(0), Eigen::Vector3d::UnitX());
+
+    // 4) For Qt visualization requirement, convert our Eigen::Matrix3d to QMatrix3x3
+    Eigen::Matrix3f R = rotationMatrix.cast<float>();
+    // We need to transpose it because Eigen uses row-major order while Qt uses column-major order
+    QMatrix3x3 qt_R = QMatrix3x3(R.data()).transposed();
+
+    // 5) The same for translation, convert it into QVector3D
+    Eigen::Vector3d t = eigen_mat.translation();
+    QVector3D qt_t(t.x(), t.y(), t.z());
+
+    // 6) Pack everything up and construct the QMatrix4x4
+    QMatrix4x4 qt_T(qt_R);
+    // Let's convert the translation in VIZ_SCALE for visualization consistency, by default it is in decimeters
+    qt_T.setColumn(3, QVector4D(VIZ_SCALE*qt_t, 1.0f));
+
+    return qt_T;
+
+
+    /* This block is my attempt to do the same thing as the current working code but in quaternion without
+     * involving euler angles conversion. It was because I afraid that gimbal lock will screw the visualization.
+     *
+    // swap the order of rotation and invert the rotation
+    Eigen::Quaterniond q_xyz(eigen_mat.rotation());
+    Eigen::Quaterniond q_zyx_inverted = swapQuaternionOrderXYZtoZYX(q_xyz, false);
+
+    // convert quaternion rotation to matrix rotation
+    Eigen::Matrix3f R = q_zyx_inverted.toRotationMatrix().cast<float>();
+    // transpose Eigen::Matrix3f data because Eigen uses row-major order while Qt uses column-major order
+    QMatrix3x3 qt_R = QMatrix3x3(R.data()).transposed();
+
+    // convert Eigen::Vector3d to QVector3D
+    Eigen::Vector3d t = eigen_mat.translation();
+    QVector3D qt_t(t.x(), t.y(), t.z());
+
+    // construct the QMatrix4x4
+    QMatrix4x4 qt_T(qt_R);
+    qt_T.setColumn(3, QVector4D(VIZ_SCALE*qt_t, 1.0f));
+
+    return qt_T;
+    */
+
+    /* This block is the original one, in which i was confuse why the visualisation in Qt is different
+     * when i compare it with Qualisys interface
+     *
     // Convert to Matrix4f
     Eigen::Matrix4f mat = eigen_mat.matrix().cast<float>();
 
-    // I am using dummy data for now, so i need to adjust a little bit with the translation
-    // let's do it in centimeter
-    QMatrix4x4 currentQMat = QMatrix4x4(mat.data()).transposed();
-    QVector3D translation  = currentQMat.column(3).toVector3D();
-    currentQMat.setColumn(3, QVector4D(VIZ_SCALE*translation, 1.0f));
-    return currentQMat;
-
     // Transpose to match row-major order because Eigen uses column-major order by default,
     // while Qt uses row-major order for its matrices.
-    //return QMatrix4x4(mat.data()).transposed();
+    QMatrix4x4 currentQMat = QMatrix4x4(mat.data()).transposed();
+
+    // Let's convert the translation in VIZ_SCALE, by default it is in decimeters
+    QVector3D translation  = currentQMat.column(3).toVector3D();
+    currentQMat.setColumn(3, QVector4D(VIZ_SCALE*translation, 1.0f));
+
+    return currentQMat;
+    */
+}
+
+// Function to swap rotation order but with quaternion instead of involving conversion to euler angles
+Eigen::Quaterniond Bmode3DVisualizer::swapQuaternionOrderXYZtoZYX(const Eigen::Quaterniond& q, bool invert) {
+    // Extract Z rotation
+    double qz_w = std::sqrt(q.w() * q.w() + q.z() * q.z());
+    Eigen::Quaterniond qz(qz_w, 0, 0, q.z() / qz_w);
+
+    // Extract Y rotation
+    Eigen::Quaterniond qy_temp = q * qz.inverse();
+    double qy_w = std::sqrt(qy_temp.w() * qy_temp.w() + qy_temp.y() * qy_temp.y());
+    Eigen::Quaterniond qy(qy_w, 0, qy_temp.y() / qy_w, 0);
+
+    // Extract X rotation
+    Eigen::Quaterniond qx = qy.inverse() * qy_temp;
+
+    if (invert) {
+        // Invert all rotations and reverse the order
+        return qx.conjugate() * qy.conjugate() * qz.conjugate();
+    } else {
+        // Original ZYX order without inversion
+        return qz * qy * qx;
+    }
 }
 
 // Function to create a line entity representing an axis
