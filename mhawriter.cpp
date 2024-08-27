@@ -88,6 +88,7 @@ int MHAWriter::stopRecord()
     header_.BinaryData                 = true;                                  // Data is in binary format (must be true)
     header_.BinaryDataByteOrderMSB     = false;                                 // Little-endian byte order (must be false)
     header_.CompressedData             = false;                                 // Data is not compressed
+    header_.Kinds                      = {"domain", "domain", "list"};
     header_.TransformMatrix            = {1, 0, 0, 0, 1, 0, 0, 0, 1};           // Initialize with an identity matrix (not used by Plus Toolkit, typical value is identity matrix)
     header_.DimSize                    = { allImages.at(1).cols, allImages.at(1).rows, static_cast<int>(allImages.size())}; // Assuming a 2D image with one slice
     header_.Offset                     = {0, 0, 0};                             // Origin of the image (not used by Plus Toolkit, typical value is 0 0 0)
@@ -117,6 +118,7 @@ bool MHAWriter::writeHeader()
     mhaFile_ << "BinaryData = "                 << (header_.BinaryData ? "True" : "False") << std::endl;
     mhaFile_ << "BinaryDataByteOrderMSB = "     << (header_.BinaryDataByteOrderMSB ? "True" : "False") << std::endl;
     mhaFile_ << "CompressedData = "             << (header_.CompressedData ? "True" : "False") << std::endl;
+    mhaFile_ << "Kinds = "                      << header_.Kinds.at(0) << " " << header_.Kinds.at(1) << " " << header_.Kinds.at(2) << std::endl;
     mhaFile_ << "TransformMatrix = "            << header_.TransformMatrix.at(0) << " " << header_.TransformMatrix.at(1) << " " << header_.TransformMatrix.at(2) << " "
                                                 << header_.TransformMatrix.at(3) << " " << header_.TransformMatrix.at(4) << " " << header_.TransformMatrix.at(5) << " "
                                                 << header_.TransformMatrix.at(6) << " " << header_.TransformMatrix.at(7) << " " << header_.TransformMatrix.at(8) << std::endl;

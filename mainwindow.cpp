@@ -44,19 +44,20 @@ MainWindow::MainWindow(QWidget *parent)
     scatter->setOrthoProjection(true);
     scatter->scene()->activeCamera()->setCameraPreset(Q3DCamera::CameraPresetIsometricLeft);
     scatter->setShadowQuality(QAbstract3DGraph::ShadowQualityNone);
-    // scatter->axisX()->setTitle("X Axis");
-    // scatter->axisY()->setTitle("Y Axis");
-    // scatter->axisZ()->setTitle("Z Axis");
-    // scatter->axisX()->setTitleVisible(true);
-    // scatter->axisY()->setTitleVisible(true);
-    // scatter->axisZ()->setTitleVisible(true);
-    scatter->axisX()->setLabelFormat("");
-    scatter->axisY()->setLabelFormat("");
-    scatter->axisZ()->setLabelFormat("");
-    scatter->axisX()->setSegmentCount(1);
-    scatter->axisY()->setSegmentCount(1);
-    scatter->axisZ()->setSegmentCount(1);
+    scatter->axisX()->setTitle("X Axis");
+    scatter->axisY()->setTitle("Y Axis");
+    scatter->axisZ()->setTitle("Z Axis");
+    scatter->axisX()->setTitleVisible(true);
+    scatter->axisY()->setTitleVisible(true);
+    scatter->axisZ()->setTitleVisible(true);
+    // scatter->axisX()->setLabelFormat("");
+    // scatter->axisY()->setLabelFormat("");
+    // scatter->axisZ()->setLabelFormat("");
+    // scatter->axisX()->setSegmentCount(1);
+    // scatter->axisY()->setSegmentCount(1);
+    // scatter->axisZ()->setSegmentCount(1);
     scatter->setAspectRatio(1.0);
+    scatter->setHorizontalAspectRatio(1.0);
 
     // Assuming 'scatter' is a pointer to your Q3DScatter instance
     Q3DCamera *camera = scatter->scene()->activeCamera();
@@ -638,7 +639,7 @@ void MainWindow::on_pushButton_volumeReconstruct_clicked()
     process = new QProcess(this);
     QString executablePath = file_exe;
     QStringList arguments;
-    arguments << file_config << file_source << file_output << param1 << param2;
+    arguments << file_config << file_source << file_output << param2;
 
     process->start(executablePath, arguments);
     qDebug() << process->state();

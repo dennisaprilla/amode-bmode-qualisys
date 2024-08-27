@@ -51,6 +51,7 @@ public:
         bool             BinaryData;
         bool             BinaryDataByteOrderMSB;
         bool             CompressedData;
+        std::vector<std::string> Kinds;
         std::vector<int> TransformMatrix;
         std::vector<int> DimSize;
         std::vector<int> Offset;

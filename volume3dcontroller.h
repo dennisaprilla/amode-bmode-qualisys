@@ -75,9 +75,19 @@ private:
     Eigen::MatrixXd vectorVector2EigenMatrix(const std::vector<std::vector<int>>& voxel_coordinate);
 
     /**
+     * @brief Convert right-hand CS (from Qualisys) to left-handed CS (Qt3DScatter plot)
+     */
+    Eigen::Affine3d RightToLeftHandedTransformation(const Eigen::Affine3d& rightHandedTransform);
+
+    /**
+     * @brief To calculate the bounding cube of the volume presented in 3D scatter plot
+     */
+    Eigen::MatrixXd findBoundingCubeBottomAligned(const Eigen::MatrixXd& boxVertices);
+
+    /**
      * @brief Initialize the data that will be shown in the scatter
      */
-    void initData();
+    // void initData();
 
 
     // all variables related to MHA files

@@ -33,8 +33,16 @@ Volume3DController::Volume3DController(QObject *parent, Q3DScatter *scatter, MHA
     pixelintensity_min_ = *minmax.first;
     pixelintensity_max_ = *minmax.second;
 
+    // delete all the series inside the scatter. This is new session of volume reconstruction,
+    // i want everything that is reconstructed before, gone.
+    for (QScatter3DSeries *series : m_scatter->seriesList()) {
+        m_scatter->removeSeries(series);
+    }
+
+    // initial pixel intensity
+    int init_threshold = pixelintensity_min_ + ((pixelintensity_max_ - pixelintensity_min_)/2);
     // add data
-    initData();
+    updateVolume(init_threshold);
 }
 
 void Volume3DController::findIndicesWithThreshold(const std::vector<unsigned char>& volume, int threshold, std::vector<int>& result) {
@@ -99,6 +107,57 @@ Eigen::MatrixXd Volume3DController::vectorVector2EigenMatrix(const std::vector<s
     return matrix;
 }
 
+Eigen::Affine3d Volume3DController::RightToLeftHandedTransformation(const Eigen::Affine3d& rightHandedTransform) {
+    // Start by copying the input transformation
+    Eigen::Affine3d leftHandedTransform = rightHandedTransform;
+
+    // Negate the Z components of the rotation part (third row and third column of the rotation matrix)
+    leftHandedTransform.linear()(0, 2) *= -1.0;
+    leftHandedTransform.linear()(1, 2) *= -1.0;
+    leftHandedTransform.linear()(2, 0) *= -1.0;
+    leftHandedTransform.linear()(2, 1) *= -1.0;
+
+    // Negate the Z component of the translation vector
+    leftHandedTransform.translation()(2) *= -1.0;
+
+    return leftHandedTransform;
+}
+
+Eigen::MatrixXd Volume3DController::findBoundingCubeBottomAligned(const Eigen::MatrixXd& boxVertices) {
+    // Ensure the input is 4x8 (homogeneous coordinates for 8 vertices)
+    assert(boxVertices.rows() == 4 && boxVertices.cols() == 8);
+
+    // Extract the x, y, z coordinates
+    Eigen::Vector3d minCoords = boxVertices.block<3, 8>(0, 0).rowwise().minCoeff();
+    Eigen::Vector3d maxCoords = boxVertices.block<3, 8>(0, 0).rowwise().maxCoeff();
+
+    // Compute the center of the bounding box in the x and y directions
+    Eigen::Vector2d xyCenter = (minCoords.head<2>() + maxCoords.head<2>()) / 2.0;
+
+    // Determine the side length of the bounding cube
+    double sideLength = (maxCoords - minCoords).maxCoeff();
+
+    // Compute the half side length of the cube
+    double halfSide = sideLength / 2.0;
+
+    // Define the vertices of the cube in the local space
+    Eigen::MatrixXd cubeVertices(4, 8);
+    cubeVertices << -halfSide,  halfSide,  halfSide, -halfSide, -halfSide,  halfSide,  halfSide, -halfSide,
+        -halfSide, -halfSide,  halfSide,  halfSide, -halfSide, -halfSide,  halfSide,  halfSide,
+        0,        0,         0,         0,        sideLength, sideLength, sideLength, sideLength,
+        1, 1, 1, 1, 1, 1, 1, 1;  // Homogeneous coordinate (w = 1)
+
+    // Translate the cube to align the bottom with the min z-coordinate and center it in x and y
+    for (int i = 0; i < 8; ++i) {
+        cubeVertices(0, i) += xyCenter.x();  // Shift in x direction
+        cubeVertices(1, i) += xyCenter.y();  // Shift in y direction
+        cubeVertices(2, i) += minCoords.z(); // Align the bottom face with the min z-coordinate
+    }
+
+    return cubeVertices;
+}
+
+/*
 void Volume3DController::initData()
 {
     // initial pixel intensity
@@ -119,7 +178,23 @@ void Volume3DController::initData()
     Eigen::MatrixXd voxelcoordinate_homogeneous(4, voxelcoordinate_.cols());
     voxelcoordinate_homogeneous << voxelcoordinate_, Eigen::MatrixXd::Ones(1, voxelcoordinate_.cols());
 
+    // Corner voxel (to know the borders)
+    std::vector<std::vector<int>> bordercoordinate;
+    bordercoordinate.push_back({0, 0, 0});
+    bordercoordinate.push_back({0, 0, myMHAHeader_.DimSize.at(2)});
+    bordercoordinate.push_back({0, myMHAHeader_.DimSize.at(1), 0});
+    bordercoordinate.push_back({0, myMHAHeader_.DimSize.at(1), myMHAHeader_.DimSize.at(2)});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), 0, 0});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), 0, myMHAHeader_.DimSize.at(2)});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), myMHAHeader_.DimSize.at(1), 0});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), myMHAHeader_.DimSize.at(1), myMHAHeader_.DimSize.at(2)});
+    Eigen::MatrixXd bordercoordinate_ = vectorVector2EigenMatrix(bordercoordinate).transpose();
+    Eigen::MatrixXd bordercoordinate_homogeneous(4, bordercoordinate_.cols());
+    bordercoordinate_homogeneous << bordercoordinate_, Eigen::MatrixXd::Ones(1, bordercoordinate_.cols());
+    Eigen::MatrixXd bordercubecoordinate_homogeneous = findBoundingCubeBottomAligned(bordercoordinate_homogeneous);
+
     // Get the transformation value from MHAReader
+    // Eigen::Vector3d init_t(0, 0, 0);
     Eigen::Vector3d init_t(myMHAHeader_.Offset[0], myMHAHeader_.Offset[1], myMHAHeader_.Offset[2]);
     Eigen::Vector3d init_s(myMHAHeader_.ElementSpacing[0], myMHAHeader_.ElementSpacing[1], myMHAHeader_.ElementSpacing[2]);
     // Eigen::Matrix3d init_R = Eigen::Matrix3d::Identity();
@@ -127,10 +202,24 @@ void Volume3DController::initData()
     Eigen::Affine3d init_A = Eigen::Affine3d::Identity();
     init_A.translate(init_t);
     init_A.linear() = init_R * init_s.asDiagonal();
+    // Convert the transformation from right-hand (Qualisys) to left-hand (Qt3DScatter plot)
+    Eigen::Affine3d init_A_lh   = RightToLeftHandedTransformation(init_A);
 
-    // Apply the transformation
-    voxelcoordinate_homogeneous = init_A.matrix() * voxelcoordinate_homogeneous;
+    // The point cloud also needs to be negated first (in the z component)
+    voxelcoordinate_homogeneous.row(2) *= -1;
+    // Transform the z-negated point cloud with transformed transformation
+    voxelcoordinate_homogeneous = init_A_lh.matrix() * voxelcoordinate_homogeneous;
     voxelcoordinate_ = voxelcoordinate_homogeneous.topRows(3);
+
+    // The point cloud also needs to be negated first (in the z component)
+    bordercubecoordinate_homogeneous.row(2) *= -1;
+    // Transform the z-negated point cloud with transformed transformation
+    bordercubecoordinate_homogeneous = init_A_lh.matrix() * bordercubecoordinate_homogeneous;
+    bordercoordinate_ = bordercubecoordinate_homogeneous.topRows(3);
+
+    // // Apply the transformation
+    // voxelcoordinate_homogeneous = init_A.matrix() * voxelcoordinate_homogeneous;
+    // voxelcoordinate_ = voxelcoordinate_homogeneous.topRows(3);
 
     // Create a new QScatterDataArray
     QScatterDataArray* dataArray = new QScatterDataArray;
@@ -140,11 +229,14 @@ void Volume3DController::initData()
     for (int i = 0; i < voxelcoordinate_.cols(); ++i) {
         (*dataArray)[i].setPosition( QVector3D(voxelcoordinate_(0, i),voxelcoordinate_(1, i),voxelcoordinate_(2, i)));
     }
+    // for (int i = 0; i < bordercoordinate_.cols(); ++i) {
+    //     (*dataArray)[i].setPosition( QVector3D(bordercoordinate_(0, i),bordercoordinate_(1, i),bordercoordinate_(2, i)));
+    // }
 
     // Create a new scatter series
     QScatter3DSeries *series = new QScatter3DSeries();
     series->setName("tissue_layers");
-    series->setItemSize(0.02f);
+    series->setItemSize(0.05f);
     series->setMesh(QAbstract3DSeries::MeshPoint);
     series->setBaseGradient(gradient);
     series->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
@@ -153,14 +245,14 @@ void Volume3DController::initData()
     // add the volume to the series
     m_scatter->addSeries(series);
 
-    // set range
-    m_scatter->axisX()->setRange(myMHAHeader_.Offset[0] - 50,
-                                 myMHAHeader_.Offset[0]+(myMHAHeader_.DimSize[0]*myMHAHeader_.ElementSpacing[0]) + 50);
-    m_scatter->axisY()->setRange(myMHAHeader_.Offset[1],
-                                 myMHAHeader_.Offset[1]+(myMHAHeader_.DimSize[1]*myMHAHeader_.ElementSpacing[1]) + 50);
-    m_scatter->axisZ()->setRange(myMHAHeader_.Offset[2]-(myMHAHeader_.DimSize[2]*myMHAHeader_.ElementSpacing[2]) - 50,
-                                 myMHAHeader_.Offset[2] + 50);
+    Eigen::Vector3d minCoords = bordercoordinate_.block<3, 8>(0, 0).rowwise().minCoeff();
+    Eigen::Vector3d maxCoords = bordercoordinate_.block<3, 8>(0, 0).rowwise().maxCoeff();
+    m_scatter->axisX()->setRange(minCoords(0)-20, maxCoords(0)+20);
+    m_scatter->axisY()->setRange(minCoords(1), maxCoords(1)+40);
+    m_scatter->axisZ()->setRange(minCoords(2)-20, maxCoords(2)+20);
+
 }
+*/
 
 void Volume3DController::updateVolume(int value)
 {
@@ -186,7 +278,23 @@ void Volume3DController::updateVolume(int value)
     Eigen::MatrixXd voxelcoordinate_homogeneous(4, voxelcoordinate_.cols());
     voxelcoordinate_homogeneous << voxelcoordinate_, Eigen::MatrixXd::Ones(1, voxelcoordinate_.cols());
 
+    // Corner voxel (to know the borders)
+    std::vector<std::vector<int>> bordercoordinate;
+    bordercoordinate.push_back({0, 0, 0});
+    bordercoordinate.push_back({0, 0, myMHAHeader_.DimSize.at(2)});
+    bordercoordinate.push_back({0, myMHAHeader_.DimSize.at(1), 0});
+    bordercoordinate.push_back({0, myMHAHeader_.DimSize.at(1), myMHAHeader_.DimSize.at(2)});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), 0, 0});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), 0, myMHAHeader_.DimSize.at(2)});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), myMHAHeader_.DimSize.at(1), 0});
+    bordercoordinate.push_back({myMHAHeader_.DimSize.at(0), myMHAHeader_.DimSize.at(1), myMHAHeader_.DimSize.at(2)});
+    Eigen::MatrixXd bordercoordinate_ = vectorVector2EigenMatrix(bordercoordinate).transpose();
+    Eigen::MatrixXd bordercoordinate_homogeneous(4, bordercoordinate_.cols());
+    bordercoordinate_homogeneous << bordercoordinate_, Eigen::MatrixXd::Ones(1, bordercoordinate_.cols());
+    Eigen::MatrixXd bordercubecoordinate_homogeneous = findBoundingCubeBottomAligned(bordercoordinate_homogeneous);
+
     // Get the transformation value from MHAReader
+    // Eigen::Vector3d init_t(0, 0, 0);
     Eigen::Vector3d init_t(myMHAHeader_.Offset[0], myMHAHeader_.Offset[1], myMHAHeader_.Offset[2]);
     Eigen::Vector3d init_s(myMHAHeader_.ElementSpacing[0], myMHAHeader_.ElementSpacing[1], myMHAHeader_.ElementSpacing[2]);
     // Eigen::Matrix3d init_R = Eigen::Matrix3d::Identity();
@@ -194,10 +302,24 @@ void Volume3DController::updateVolume(int value)
     Eigen::Affine3d init_A = Eigen::Affine3d::Identity();
     init_A.translate(init_t);
     init_A.linear() = init_R * init_s.asDiagonal();
+    // Convert the transformation from right-hand (Qualisys) to left-hand (Qt3DScatter plot)
+    Eigen::Affine3d init_A_lh   = RightToLeftHandedTransformation(init_A);
 
-    // Apply the transformation
-    voxelcoordinate_homogeneous = init_A.matrix() * voxelcoordinate_homogeneous;
+    // The point cloud also needs to be negated first (in the z component)
+    voxelcoordinate_homogeneous.row(2) *= -1;
+    // Transform the z-negated point cloud with transformed transformation
+    voxelcoordinate_homogeneous = init_A_lh.matrix() * voxelcoordinate_homogeneous;
     voxelcoordinate_ = voxelcoordinate_homogeneous.topRows(3);
+
+    // The point cloud also needs to be negated first (in the z component)
+    bordercubecoordinate_homogeneous.row(2) *= -1;
+    // Transform the z-negated point cloud with transformed transformation
+    bordercubecoordinate_homogeneous = init_A_lh.matrix() * bordercubecoordinate_homogeneous;
+    bordercoordinate_ = bordercubecoordinate_homogeneous.topRows(3);
+
+    // // Apply the transformation
+    // voxelcoordinate_homogeneous = init_A.matrix() * voxelcoordinate_homogeneous;
+    // voxelcoordinate_ = voxelcoordinate_homogeneous.topRows(3);
 
     // Create a new QScatterDataArray
     QScatterDataArray* dataArray = new QScatterDataArray;
@@ -207,37 +329,34 @@ void Volume3DController::updateVolume(int value)
     for (int i = 0; i < voxelcoordinate_.cols(); ++i) {
         (*dataArray)[i].setPosition( QVector3D(voxelcoordinate_(0, i),voxelcoordinate_(1, i),voxelcoordinate_(2, i)));
     }
+    // for (int i = 0; i < bordercoordinate_.cols(); ++i) {
+    //     (*dataArray)[i].setPosition( QVector3D(bordercoordinate_(0, i),bordercoordinate_(1, i),bordercoordinate_(2, i)));
+    // }
 
     // Create a new scatter series
     QScatter3DSeries *series = new QScatter3DSeries();
     series->setName("tissue_layers");
-    series->setItemSize(0.02f);
+    series->setItemSize(0.05f);
     series->setMesh(QAbstract3DSeries::MeshPoint);
     series->setBaseGradient(gradient);
     series->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
     series->dataProxy()->resetArray(dataArray);
 
-    // and the volume to the series
+    // add the volume to the series
     m_scatter->addSeries(series);
 
-    // set range
-    m_scatter->axisX()->setRange(myMHAHeader_.Offset[0] - 50,
-                                 myMHAHeader_.Offset[0]+(myMHAHeader_.DimSize[0]*myMHAHeader_.ElementSpacing[0]) + 50);
-    m_scatter->axisY()->setRange(myMHAHeader_.Offset[1],
-                                 myMHAHeader_.Offset[1]+(myMHAHeader_.DimSize[1]*myMHAHeader_.ElementSpacing[1]) + 50);
-    m_scatter->axisZ()->setRange(myMHAHeader_.Offset[2]-(myMHAHeader_.DimSize[2]*myMHAHeader_.ElementSpacing[2]) - 50,
-                                 myMHAHeader_.Offset[2] + 50);
+    Eigen::Vector3d minCoords = bordercoordinate_.block<3, 8>(0, 0).rowwise().minCoeff();
+    Eigen::Vector3d maxCoords = bordercoordinate_.block<3, 8>(0, 0).rowwise().maxCoeff();
+    m_scatter->axisX()->setRange(minCoords(0)-20, maxCoords(0)+20);
+    m_scatter->axisY()->setRange(minCoords(1), maxCoords(1)+40);
+    m_scatter->axisZ()->setRange(minCoords(2)-20, maxCoords(2)+20);
+
 }
 
 std::array<int, 2> Volume3DController::getPixelIntensityRange() {
     std::array<int, 2> result = {pixelintensity_min_, pixelintensity_max_}; // Replace with your desired integers
     return result;
 }
-
-
-
-
-
 
 
 

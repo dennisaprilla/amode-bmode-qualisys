@@ -159,9 +159,14 @@ void QualisysConnection::receiveData() {
         Eigen::Vector3d t;
 
         // Copy the data from your arrays to the Eigen objects
-        R << tmp_R[0], tmp_R[1], tmp_R[2],
-             tmp_R[3], tmp_R[4], tmp_R[5],
-             tmp_R[6], tmp_R[7], tmp_R[8];
+        // R << tmp_R[0], tmp_R[1], tmp_R[2],
+        //      tmp_R[3], tmp_R[4], tmp_R[5],
+        //      tmp_R[6], tmp_R[7], tmp_R[8];
+        // The element of rotation matrix (tmp_R) from qualisys is defined like below
+        // the first three element of tmp_R defined as first column of the matrix, not first row
+        R << tmp_R[0], tmp_R[3], tmp_R[6],
+             tmp_R[1], tmp_R[4], tmp_R[7],
+             tmp_R[2], tmp_R[5], tmp_R[8];
         t << tmp_tX, tmp_tY, tmp_tZ;
 
         // Create an Isometry3d object and set its rotation and translation components
@@ -253,9 +258,15 @@ void QualisysConnection::streamData()
             Eigen::Vector3d t;
 
             // Copy the data from your arrays to the Eigen objects
-            R << tmp_R[0], tmp_R[1], tmp_R[2],
-                tmp_R[3], tmp_R[4], tmp_R[5],
-                tmp_R[6], tmp_R[7], tmp_R[8];
+            // R << tmp_R[0], tmp_R[1], tmp_R[2],
+            //     tmp_R[3], tmp_R[4], tmp_R[5],
+            //     tmp_R[6], tmp_R[7], tmp_R[8];
+            // t << tmp_tX, tmp_tY, tmp_tZ;
+            // The element of rotation matrix (tmp_R) from qualisys is defined like below
+            // the first three element of tmp_R defined as first column of the matrix, not first row
+            R << tmp_R[0], tmp_R[3], tmp_R[6],
+                 tmp_R[1], tmp_R[4], tmp_R[7],
+                 tmp_R[2], tmp_R[5], tmp_R[8];
             t << tmp_tX, tmp_tY, tmp_tZ;
 
             // Create an Isometry3d object and set its rotation and translation components
